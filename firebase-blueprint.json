@@ -1,0 +1,619 @@
+{
+  "entities": {
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Global supermarket storefront configuration, delivery fees, minimum order, WhatsApp operations phone, open/closed status, home sections, contact links, and branding.",
+      "type": "object",
+      "properties": {
+        "storeName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "whatsappPhone": {
+          "type": "string",
+          "pattern": "^9647[0-9]{9}$",
+          "maxLength": 15
+        },
+        "deliveryFee": {
+          "type": "number"
+        },
+        "minimumOrder": {
+          "type": "number"
+        },
+        "isStoreOpen": {
+          "type": "boolean"
+        },
+        "deliveryHoursText": {
+          "type": "object"
+        },
+        "maxOrdersPerHour": {
+          "type": "number"
+        },
+        "themeColor": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "primaryColor": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "logoUrl": {
+          "type": "string",
+          "maxLength": 90000
+        },
+        "homeSections": {
+          "type": "array"
+        },
+        "contactLinks": {
+          "type": "array"
+        }
+      },
+      "required": [
+        "storeName",
+        "whatsappPhone",
+        "deliveryFee",
+        "minimumOrder",
+        "isStoreOpen",
+        "deliveryHoursText",
+        "maxOrdersPerHour",
+        "themeColor"
+      ]
+    },
+    "CmsTranslations": {
+      "title": "CmsTranslations",
+      "description": "Owner-editable trilingual customer-facing copy overrides safely merged over code defaults.",
+      "type": "object",
+      "properties": {
+        "tagline": { "type": "object" },
+        "savingsPrefix": { "type": "object" },
+        "savingsSuffix": { "type": "object" },
+        "confirmationNotice": { "type": "object" },
+        "storeClosedTitle": { "type": "object" },
+        "storeClosedBody": { "type": "object" },
+        "footerNotice": { "type": "object" },
+        "deliveredThankYouTitle": { "type": "object" },
+        "deliveredThankYouBody": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Grocery department category with trilingual names, icon/emoji or compressed data URL, and bounded subcategories.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "nameKu": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "nameAr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "nameEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 90000
+        },
+        "subcategories": {
+          "type": "array"
+        },
+        "sortOrder": {
+          "type": "number"
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "nameKu",
+        "nameAr",
+        "nameEn",
+        "icon",
+        "subcategories",
+        "sortOrder",
+        "isActive"
+      ]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Grocery catalog item with live ourPrice/marketPrice, stock state, section visibility flags, audit note, and URL or compressed data-URL image.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 80
+        },
+        "categoryId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "subcategoryId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "nameKu": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "nameAr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "nameEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "size": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "ourPrice": {
+          "type": "number"
+        },
+        "marketPrice": {
+          "type": "number"
+        },
+        "marketPriceNote": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "marketPriceUpdatedAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 90000
+        },
+        "section": {
+          "type": "string",
+          "enum": ["deals", "popular", "new", "recommended"]
+        },
+        "inStock": {
+          "type": "boolean"
+        },
+        "showInDeals": {
+          "type": "boolean"
+        },
+        "showInPopular": {
+          "type": "boolean"
+        },
+        "isNew": {
+          "type": "boolean"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "categoryId",
+        "subcategoryId",
+        "nameKu",
+        "nameAr",
+        "nameEn",
+        "size",
+        "ourPrice",
+        "marketPrice",
+        "imageUrl",
+        "section",
+        "isActive",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Banner": {
+      "title": "Banner",
+      "description": "Promotional storefront banner linked to a category.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "titleKu": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "titleAr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "titleEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 90000
+        },
+        "linkCategoryId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "sortOrder": {
+          "type": "number"
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "titleKu",
+        "titleAr",
+        "titleEn",
+        "imageUrl",
+        "linkCategoryId",
+        "sortOrder",
+        "isActive"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private customer profile, delivery location, language preference, and synced cart.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "phoneDisplay": {
+          "type": "string",
+          "minLength": 9,
+          "maxLength": 24
+        },
+        "phoneNormalized": {
+          "type": "string",
+          "pattern": "^9647[0-9]{9}$",
+          "maxLength": 15
+        },
+        "addressText": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "buildingNotes": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "gps": {
+          "type": "object"
+        },
+        "language": {
+          "type": "string",
+          "enum": ["ku", "ar", "en"]
+        },
+        "cart": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "fullName",
+        "phoneDisplay",
+        "phoneNormalized",
+        "addressText",
+        "buildingNotes",
+        "gps",
+        "language",
+        "cart",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Cash-on-Delivery customer grocery order with snapshotted item prices, savings, and delivery metadata.",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "pattern": "^SM-[0-9]{4,6}$",
+          "maxLength": 20
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "phoneDisplay": {
+          "type": "string",
+          "minLength": 9,
+          "maxLength": 24
+        },
+        "phoneNormalized": {
+          "type": "string",
+          "pattern": "^9647[0-9]{9}$",
+          "maxLength": 15
+        },
+        "addressText": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "buildingNotes": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "gps": {
+          "type": "object"
+        },
+        "googleMapsUrl": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "items": {
+          "type": "array"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "totalSavings": {
+          "type": "number"
+        },
+        "deliveryFee": {
+          "type": "number"
+        },
+        "grandTotal": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["New", "Called", "Confirmed", "Bought", "Delivered", "Cancelled", "Fake"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "orderNumber",
+        "userId",
+        "customerName",
+        "phoneDisplay",
+        "phoneNormalized",
+        "addressText",
+        "buildingNotes",
+        "gps",
+        "googleMapsUrl",
+        "items",
+        "subtotal",
+        "totalSavings",
+        "deliveryFee",
+        "grandTotal",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OrderAdminNote": {
+      "title": "OrderAdminNote",
+      "description": "Internal admin-only staff note attached to an order; never readable by customers.",
+      "type": "object",
+      "properties": {
+        "authorUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "authorEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["authorUid", "authorEmail", "note", "createdAt"]
+    },
+    "BlockedPhone": {
+      "title": "BlockedPhone",
+      "description": "Phone number blocked by store owners from placing new orders.",
+      "type": "object",
+      "properties": {
+        "phoneNormalized": {
+          "type": "string",
+          "pattern": "^9647[0-9]{9}$",
+          "maxLength": 15
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "blockedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "blockedBy": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": ["phoneNormalized", "reason", "blockedAt", "blockedBy"]
+    },
+    "OrderRateLimit": {
+      "title": "OrderRateLimit",
+      "description": "Recent order submission timestamps per normalized Iraqi phone number to enforce hourly rate limits.",
+      "type": "object",
+      "properties": {
+        "recentOrderTimestamps": {
+          "type": "array"
+        }
+      },
+      "required": ["recentOrderTimestamps"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Store owner or staff member authorized for administrative operations.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "enum": ["owner", "staff"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "role", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable append-only record of administrative operations.",
+      "type": "object",
+      "properties": {
+        "actorUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "actorEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "actorRole": {
+          "type": "string",
+          "enum": ["owner", "staff"]
+        },
+        "action": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "targetCollection": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "targetId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "details": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "changes": {
+          "type": "string",
+          "maxLength": 1200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["actorUid", "action", "targetId", "details", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/StoreSettings" },
+      "description": "Storefront global configuration (document ID: store)."
+    },
+    "/cms/{docId}": {
+      "schema": { "$ref": "#/entities/CmsTranslations" },
+      "description": "Owner-editable trilingual storefront copy overrides (document ID: translations)."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Supermarket categories and nested subcategories."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Active and archived grocery catalog items."
+    },
+    "/banners/{bannerId}": {
+      "schema": { "$ref": "#/entities/Banner" },
+      "description": "Promotional home banners linked to categories."
+    },
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Customer profile, delivery location, language preference, and synced cart."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Cash-on-Delivery grocery orders."
+    },
+    "/orders/{orderId}/adminNotes/{noteId}": {
+      "schema": { "$ref": "#/entities/OrderAdminNote" },
+      "description": "Internal admin-only staff notes for orders."
+    },
+    "/blockedPhones/{phoneNormalized}": {
+      "schema": { "$ref": "#/entities/BlockedPhone" },
+      "description": "Phone numbers blocked from placing orders."
+    },
+    "/orderRateLimits/{phoneNormalized}": {
+      "schema": { "$ref": "#/entities/OrderRateLimit" },
+      "description": "Per-phone hourly order submission timestamps."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized admin accounts (owner or staff)."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Immutable admin audit log entries."
+    }
+  }
+}
