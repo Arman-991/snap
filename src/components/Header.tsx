@@ -11,6 +11,7 @@ import { useCartContext } from '../context/CartContext';
 import { formatIqd, formatOrderTimestamp } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { CustomerNotificationItem, Language } from '../types/grocery';
+import { TOP_HEADER_BASKET_ID } from '../utils/flyToBasket';
 import { formatDeliveredThankYouTemplate } from '../utils/supermarketLogic';
 
 interface HeaderProps {
@@ -321,6 +322,7 @@ export function Header({
 
         {/* Crisp Green Cart Pill Button */}
         <button
+          id={TOP_HEADER_BASKET_ID}
           type="button"
           data-testid="header-cart-btn"
           aria-label={`${t.nav.cart} (${cartCount})`}
@@ -333,7 +335,7 @@ export function Header({
           </span>
           <span
             data-testid="header-cart-count"
-            className="tabular-nums font-extrabold"
+            className="inline-block tabular-nums font-extrabold"
           >
             ({cartCount})
           </span>

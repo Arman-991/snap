@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
 import { ShoppingBasket } from 'lucide-react';
 import { useCartContext } from '../context/CartContext';
 import type { TranslationDictionary } from '../i18n/translations';
+import { BOTTOM_FLOATING_BASKET_ID } from '../utils/flyToBasket';
 
 interface FloatingCartBarProps {
   t: TranslationDictionary;
@@ -10,18 +10,6 @@ interface FloatingCartBarProps {
 
 export function FloatingCartBar({ t, onOpenCart }: FloatingCartBarProps) {
   const { itemCount } = useCartContext();
-  const prevCountRef = useRef<number>(itemCount);
-  const [popping, setPopping] = useState(false);
-
-  useEffect(() => {
-    if (itemCount > 0 && prevCountRef.current !== itemCount) {
-      setPopping(true);
-      const timer = window.setTimeout(() => setPopping(false), 180);
-      prevCountRef.current = itemCount;
-      return () => window.clearTimeout(timer);
-    }
-    prevCountRef.current = itemCount;
-  }, [itemCount]);
 
   if (itemCount <= 0) {
     return null;
@@ -30,13 +18,12 @@ export function FloatingCartBar({ t, onOpenCart }: FloatingCartBarProps) {
   return (
     <div className="pointer-events-none fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex w-full max-w-[480px] -translate-x-1/2 justify-end px-4">
       <button
+        id={BOTTOM_FLOATING_BASKET_ID}
         type="button"
         data-testid="floating-cart-fab"
         aria-label={`${t.nav.cart} (${itemCount})`}
         onClick={onOpenCart}
-        className={`pointer-events-auto relative flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-[0_8px_24px_rgba(22,163,74,0.38)] transition-transform duration-150 hover:bg-green-700 active:scale-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 ${
-          popping ? 'scale-110' : 'scale-100'
-        }`}
+        className="pointer-events-auto relative flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-[0_8px_24px_rgba(22,163,74,0.38)] transition-transform duration-150 hover:bg-green-700 active:scale-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
       >
         <ShoppingBasket className="h-6 w-6 shrink-0" aria-hidden="true" />
         <span

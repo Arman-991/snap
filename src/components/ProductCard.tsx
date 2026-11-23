@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Minus, Plus } from 'lucide-react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { Plus } from 'lucide-react';
 import { formatIqd, getNameByLang } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { Language, Product } from '../types/grocery';
@@ -7,6 +7,7 @@ import {
   isProductInStock,
   matchesProductSectionFlag,
 } from '../utils/adminLogic';
+import { triggerFlyToBasket } from '../utils/flyToBasket';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +15,7 @@ interface ProductCardProps {
   language: Language;
   t: TranslationDictionary;
   onIncrement: (product: Product) => void;
-  onDecrement: (product: Product) => void;
+  onDecrement?: (product: Product) => void;
   onOpenDetail: (product: Product) => void;
 }
 
@@ -27,19 +28,36 @@ export function ProductCard({
   language,
   t,
   onIncrement,
-  onDecrement,
   onOpenDetail,
 }: ProductCardProps) {
   const [imgSrc, setImgSrc] = useState(product.imageUrl || FALLBACK_IMAGE);
+  const [popTick, setPopTick] = useState(0);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const prevQtyRef = useRef(quantity);
 
   useEffect(() => {
     setImgSrc(product.imageUrl || FALLBACK_IMAGE);
   }, [product.imageUrl]);
 
+  useEffect(() => {
+    if (quantity > prevQtyRef.current) {
+      setPopTick((tick) => tick + 1);
+    }
+    prevQtyRef.current = quantity;
+  }, [quantity]);
+
   const name = getNameByLang(product, language);
   const hasDiscount = product.marketPrice > product.ourPrice;
   const inStock = isProductInStock(product);
   const isDeal = matchesProductSectionFlag(product, 'deals');
+
+  const handleAddTap = (event: MouseEvent<HTMLButtonElement>) => {
+    onIncrement(product);
+    triggerFlyToBasket({
+      sourceEl: imgRef.current ?? event.currentTarget,
+      imageUrl: imgSrc,
+    });
+  };
 
   return (
     <article
@@ -56,6 +74,7 @@ export function ProductCard({
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-50">
           <img
+            ref={imgRef}
             src={imgSrc}
             alt={name}
             loading="lazy"
@@ -77,6 +96,20 @@ export function ProductCard({
                 {t.storefront.sections.deals}
               </span>
             )
+          )}
+
+          {/* Top-corner cart quantity badge (opposite corner from Deals tag) */}
+          {quantity > 0 && (
+            <span
+              key={popTick}
+              data-testid={`product-qty-badge-${product.id}`}
+              aria-label={`${quantity}`}
+              className={`absolute end-2 top-2 z-10 flex h-7 min-w-[28px] items-center justify-center rounded-full border-2 border-white bg-green-600 px-1.5 text-xs font-extrabold text-white shadow-md tabular-nums ${
+                popTick > 0 ? 'animate-corner-badge-pop' : ''
+              }`}
+            >
+              {quantity}
+            </span>
           )}
         </div>
 
@@ -104,7 +137,7 @@ export function ProductCard({
         </div>
       </button>
 
-      {/* Bottom 44px Add / Quantity Stepper */}
+      {/* Permanent solid green "+ Add" button on every in-stock card */}
       <div className="p-2.5 pt-1.5">
         {!inStock ? (
           <button
@@ -114,38 +147,17 @@ export function ProductCard({
           >
             {t.product.outOfStock}
           </button>
-        ) : quantity === 0 ? (
+        ) : (
           <button
             type="button"
             data-testid={`product-add-${product.id}`}
-            onClick={() => onIncrement(product)}
+            onClick={handleAddTap}
+            aria-label={`${t.product.add}: ${name}`}
             className="flex min-h-[42px] w-full items-center justify-center gap-1 rounded-xl bg-green-600 px-3 text-xs font-bold text-white transition-transform duration-100 hover:bg-green-700 active:scale-95"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{t.product.add}</span>
           </button>
-        ) : (
-          <div className="flex min-h-[42px] items-center justify-between rounded-xl border border-green-600 bg-green-50">
-            <button
-              type="button"
-              onClick={() => onDecrement(product)}
-              aria-label={`${t.product.decreaseQty}: ${name}`}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-green-700 transition-transform duration-100 hover:bg-green-100 active:scale-95"
-            >
-              <Minus className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <span className="font-display text-sm font-extrabold text-[#141A15] tabular-nums">
-              {quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => onIncrement(product)}
-              aria-label={`${t.product.increaseQty}: ${name}`}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-green-700 transition-transform duration-100 hover:bg-green-100 active:scale-95"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
         )}
       </div>
     </article>

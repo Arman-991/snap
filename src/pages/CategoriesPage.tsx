@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import {
   ArrowLeft,
   ChevronRight,
   ClipboardCheck,
-  Minus,
   Plus,
   Search,
   X,
@@ -12,7 +11,11 @@ import { CategoryPhotoGrid } from '../components/CategoryPhotoGrid';
 import { formatIqd, getNameByLang } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { Category, Language, Product } from '../types/grocery';
-import { isProductInStock } from '../utils/adminLogic';
+import {
+  isProductInStock,
+  matchesProductSectionFlag,
+} from '../utils/adminLogic';
+import { triggerFlyToBasket } from '../utils/flyToBasket';
 import { matchesProductSearch } from '../utils/supermarketLogic';
 
 const FALLBACK_PRODUCT_IMAGE =
@@ -49,20 +52,38 @@ function CompactCategoryProductCard({
   language,
   t,
   onIncrement,
-  onDecrement,
   onOpenDetail,
 }: CompactCategoryProductCardProps) {
   const [imgSrc, setImgSrc] = useState(
     product.imageUrl || FALLBACK_PRODUCT_IMAGE
   );
+  const [popTick, setPopTick] = useState(0);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const prevQtyRef = useRef(quantity);
 
   useEffect(() => {
     setImgSrc(product.imageUrl || FALLBACK_PRODUCT_IMAGE);
   }, [product.imageUrl]);
 
+  useEffect(() => {
+    if (quantity > prevQtyRef.current) {
+      setPopTick((tick) => tick + 1);
+    }
+    prevQtyRef.current = quantity;
+  }, [quantity]);
+
   const name = getNameByLang(product, language);
   const inStock = isProductInStock(product);
   const hasDiscount = product.marketPrice > product.ourPrice;
+  const isDeal = matchesProductSectionFlag(product, 'deals');
+
+  const handleAddTap = (event: MouseEvent<HTMLButtonElement>) => {
+    onIncrement(product);
+    triggerFlyToBasket({
+      sourceEl: imgRef.current ?? event.currentTarget,
+      imageUrl: imgSrc,
+    });
+  };
 
   return (
     <article
@@ -78,6 +99,7 @@ function CompactCategoryProductCard({
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F8FAFC]">
           <img
+            ref={imgRef}
             src={imgSrc}
             alt={name}
             loading="lazy"
@@ -90,9 +112,28 @@ function CompactCategoryProductCard({
               !inStock ? 'grayscale-[50%]' : ''
             }`}
           />
-          {!inStock && (
+          {!inStock ? (
             <span className="absolute start-2 top-2 rounded-md bg-[#B42318] px-2 py-0.5 text-[10px] font-bold text-white">
               {t.product.outOfStock}
+            </span>
+          ) : (
+            isDeal && (
+              <span className="absolute start-2 top-2 rounded-md bg-green-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                {t.storefront.sections.deals}
+              </span>
+            )
+          )}
+
+          {quantity > 0 && (
+            <span
+              key={popTick}
+              data-testid={`cat-qty-badge-${product.id}`}
+              aria-label={`${quantity}`}
+              className={`absolute end-2 top-2 z-10 flex h-7 min-w-[28px] items-center justify-center rounded-full border-2 border-white bg-green-600 px-1.5 text-xs font-extrabold text-white shadow-md tabular-nums ${
+                popTick > 0 ? 'animate-corner-badge-pop' : ''
+              }`}
+            >
+              {quantity}
             </span>
           )}
         </div>
@@ -129,39 +170,17 @@ function CompactCategoryProductCard({
           >
             {t.product.outOfStock}
           </button>
-        ) : quantity === 0 ? (
+        ) : (
           <button
             type="button"
             data-testid={`cat-add-${product.id}`}
-            onClick={() => onIncrement(product)}
+            onClick={handleAddTap}
             aria-label={`${t.product.add}: ${name}`}
-            className="flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl bg-[#16A34A] px-3 text-sm font-bold text-white transition-transform hover:bg-[#15803D] active:scale-[0.97]"
+            className="flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl bg-green-600 px-3 text-sm font-bold text-white transition-transform duration-100 hover:bg-green-700 active:scale-95"
           >
-            <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="text-xs font-bold sm:text-sm">{t.product.add}</span>
           </button>
-        ) : (
-          <div className="flex min-h-[44px] items-center justify-between rounded-xl border border-[#16A34A] bg-[#F0FDF4]">
-            <button
-              type="button"
-              onClick={() => onDecrement(product)}
-              aria-label={`${t.product.decreaseQty}: ${name}`}
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-[#15803D] transition-transform hover:bg-[#DCFCE7] active:scale-95"
-            >
-              <Minus className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <span className="font-display text-sm font-extrabold text-[#0F172A] tabular-nums">
-              {quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => onIncrement(product)}
-              aria-label={`${t.product.increaseQty}: ${name}`}
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-[#15803D] transition-transform hover:bg-[#DCFCE7] active:scale-95"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
         )}
       </div>
     </article>

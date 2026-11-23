@@ -4,6 +4,7 @@ import { formatIqd, getNameByLang } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { Language, Product } from '../types/grocery';
 import { isProductInStock } from '../utils/adminLogic';
+import { triggerSyncedBasketBounce } from '../utils/flyToBasket';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -138,8 +139,11 @@ export function ProductDetailModal({
             ) : quantity === 0 ? (
               <button
                 type="button"
-                onClick={() => onIncrement(product)}
-                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-semibold text-[var(--brand-primary-fg)] transition-opacity hover:opacity-92"
+                onClick={() => {
+                  onIncrement(product);
+                  window.requestAnimationFrame(() => triggerSyncedBasketBounce());
+                }}
+                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-semibold text-[var(--brand-primary-fg)] transition-transform duration-100 hover:opacity-92 active:scale-95"
               >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>{t.product.add}</span>
@@ -150,7 +154,7 @@ export function ProductDetailModal({
                   type="button"
                   onClick={() => onDecrement(product)}
                   aria-label={t.product.decreaseQty}
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--brand-primary)] hover:bg-[#DFEDE5]"
+                  className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--brand-primary)] hover:bg-[#DFEDE5] active:scale-95"
                 >
                   <Minus className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -159,9 +163,12 @@ export function ProductDetailModal({
                 </span>
                 <button
                   type="button"
-                  onClick={() => onIncrement(product)}
+                  onClick={() => {
+                    onIncrement(product);
+                    triggerSyncedBasketBounce();
+                  }}
                   aria-label={t.product.increaseQty}
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--brand-primary)] hover:bg-[#DFEDE5]"
+                  className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--brand-primary)] hover:bg-[#DFEDE5] active:scale-95"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                 </button>

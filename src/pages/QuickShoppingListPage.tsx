@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ArrowLeft,
   Check,
   CheckCircle2,
   ClipboardList,
-  Minus,
   Plus,
   Trash2,
   X,
@@ -12,6 +11,7 @@ import {
 import { formatIqd, getNameByLang } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { Language, Product } from '../types/grocery';
+import { triggerFlyToBasket } from '../utils/flyToBasket';
 import {
   ERBIL_QUICK_STAPLES,
   isQuickListItemFulfilledByCart,
@@ -84,18 +84,35 @@ function QuickListProductMiniCard({
   language,
   t,
   onIncrement,
-  onDecrement,
   onOpenDetail,
 }: QuickListProductMiniCardProps) {
   const [imgSrc, setImgSrc] = useState(
     product.imageUrl || FALLBACK_PRODUCT_IMAGE
   );
+  const [popTick, setPopTick] = useState(0);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const prevQtyRef = useRef(quantity);
 
   useEffect(() => {
     setImgSrc(product.imageUrl || FALLBACK_PRODUCT_IMAGE);
   }, [product.imageUrl]);
 
+  useEffect(() => {
+    if (quantity > prevQtyRef.current) {
+      setPopTick((tick) => tick + 1);
+    }
+    prevQtyRef.current = quantity;
+  }, [quantity]);
+
   const name = getNameByLang(product, language);
+
+  const handleAddTap = (event: MouseEvent<HTMLButtonElement>) => {
+    onIncrement(product);
+    triggerFlyToBasket({
+      sourceEl: imgRef.current ?? event.currentTarget,
+      imageUrl: imgSrc,
+    });
+  };
 
   return (
     <article
@@ -111,8 +128,9 @@ function QuickListProductMiniCard({
         onClick={() => onOpenDetail(product)}
         className="flex flex-1 flex-col text-start"
       >
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#F8FAFC]">
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#F8FAFC]">
           <img
+            ref={imgRef}
             src={imgSrc}
             alt={name}
             loading="lazy"
@@ -123,6 +141,19 @@ function QuickListProductMiniCard({
             }}
             className="h-full w-full object-cover object-center"
           />
+
+          {quantity > 0 && (
+            <span
+              key={popTick}
+              data-testid={`quicklist-qty-badge-${product.id}`}
+              aria-label={`${quantity}`}
+              className={`absolute end-1.5 top-1.5 z-10 flex h-7 min-w-[28px] items-center justify-center rounded-full border-2 border-white bg-green-600 px-1.5 text-xs font-extrabold text-white shadow-md tabular-nums ${
+                popTick > 0 ? 'animate-corner-badge-pop' : ''
+              }`}
+            >
+              {quantity}
+            </span>
+          )}
         </div>
 
         <h4 className="mt-1.5 line-clamp-2 min-h-[2rem] font-display text-xs font-bold leading-snug text-[#0F172A]">
@@ -138,40 +169,16 @@ function QuickListProductMiniCard({
       </button>
 
       <div className="mt-2">
-        {quantity === 0 ? (
-          <button
-            type="button"
-            data-testid={`quicklist-add-${product.id}`}
-            onClick={() => onIncrement(product)}
-            aria-label={`${t.product.add}: ${name}`}
-            className="flex min-h-[40px] w-full items-center justify-center gap-1 rounded-lg bg-[#16A34A] px-2 text-xs font-bold text-white transition-transform hover:bg-[#15803D] active:scale-95"
-          >
-            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>{t.product.add}</span>
-          </button>
-        ) : (
-          <div className="flex min-h-[40px] items-center justify-between rounded-lg border border-[#16A34A] bg-[#F0FDF4]">
-            <button
-              type="button"
-              onClick={() => onDecrement(product)}
-              aria-label={`${t.product.decreaseQty}: ${name}`}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-[#15803D] hover:bg-[#DCFCE7] active:scale-95"
-            >
-              <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-            <span className="font-display text-xs font-extrabold text-[#0F172A] tabular-nums">
-              {quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => onIncrement(product)}
-              aria-label={`${t.product.increaseQty}: ${name}`}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-[#15803D] hover:bg-[#DCFCE7] active:scale-95"
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
-        )}
+        <button
+          type="button"
+          data-testid={`quicklist-add-${product.id}`}
+          onClick={handleAddTap}
+          aria-label={`${t.product.add}: ${name}`}
+          className="flex min-h-[40px] w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 text-xs font-bold text-white transition-transform duration-100 hover:bg-green-700 active:scale-95"
+        >
+          <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{t.product.add}</span>
+        </button>
       </div>
     </article>
   );
