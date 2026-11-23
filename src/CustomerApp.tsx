@@ -683,18 +683,11 @@ function CustomerAppShell({
     );
   }
 
-  const showFloatingCart =
-    !isCartOpen && (cart.itemCount > 0 || activeView === 'quicklist');
-
   return (
     <div className="min-h-[100dvh] w-full bg-[#EEF2F0]">
       <div
         data-testid="customer-app-shell"
-        className={`relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col bg-[#F8FAFC] text-[#141A15] shadow-[0_0_40px_rgba(0,0,0,0.08)] ${
-          showFloatingCart
-            ? 'pb-[calc(8.75rem+env(safe-area-inset-bottom))]'
-            : 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
-        }`}
+        className="relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col bg-[#F8FAFC] pb-[calc(5rem+env(safe-area-inset-bottom))] text-[#141A15] shadow-[0_0_40px_rgba(0,0,0,0.08)]"
       >
         <Header
           t={t}
@@ -855,15 +848,7 @@ function CustomerAppShell({
       />
 
       {!isCartOpen && (
-        <FloatingCartBar
-          t={t}
-          language={language}
-          ctaLabel={
-            activeView === 'quicklist' ? t.quickList.stickyCartCta : undefined
-          }
-          alwaysShow={activeView === 'quicklist'}
-          onOpenCart={handleOpenCart}
-        />
+        <FloatingCartBar t={t} onOpenCart={handleOpenCart} />
       )}
 
       <MobileBottomNav
