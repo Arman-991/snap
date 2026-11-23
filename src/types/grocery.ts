@@ -2,7 +2,7 @@ export type Language = 'ku' | 'ar' | 'en';
 
 export type TextDirection = 'ltr' | 'rtl';
 
-export type AppView = 'market' | 'orders' | 'profile';
+export type AppView = 'market' | 'categories' | 'quicklist' | 'orders' | 'profile';
 
 export type ProductSection = 'deals' | 'popular' | 'new' | 'recommended';
 
@@ -109,6 +109,7 @@ export interface Category {
   nameAr: string;
   nameEn: string;
   icon: string;
+  imageUrl?: string;
   subcategories: Subcategory[];
   sortOrder: number;
   isActive: boolean;

@@ -2,22 +2,28 @@ import { useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
+  CheckCircle2,
   Edit3,
   Eye,
   EyeOff,
+  Loader2,
   Plus,
+  Sparkles,
   Trash2,
   Upload,
   X,
 } from 'lucide-react';
+import { FALLBACK_CATEGORY_PHOTO } from '../../data/defaultCategories';
 import { getNameByLang } from '../../i18n/format';
 import type { Category, Language, Subcategory } from '../../types/grocery';
 import { compressImageFileToDataUrl } from '../../utils/imageCompress';
+import { resolveCategoryPhotoSrc } from '../../utils/supermarketLogic';
 import type { AdminDictionary } from '../i18n/adminTranslations';
 import {
   deleteCategoryAdmin,
   reorderCategoriesAdmin,
   saveCategoryAdmin,
+  seedMissingDefaultCategoriesAdmin,
   type AdminActor,
 } from '../services/adminFirestoreService';
 
@@ -41,6 +47,30 @@ export function CategoriesTab({
   const [editing, setEditing] = useState<Category | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [seedingDefaults, setSeedingDefaults] = useState(false);
+  const [seedNotice, setSeedNotice] = useState<string | null>(null);
+
+  const handleLoadDefaultCategories = async () => {
+    if (seedingDefaults) return;
+    setSeedingDefaults(true);
+    setSeedNotice(null);
+    try {
+      const addedCount = await seedMissingDefaultCategoriesAdmin(
+        actor,
+        categories
+      );
+      if (addedCount > 0) {
+        await onRefresh();
+        setSeedNotice(
+          t.categories.defaultsAddedMsg.replace('{count}', String(addedCount))
+        );
+      } else {
+        setSeedNotice(t.categories.defaultsAlreadyPresentMsg);
+      }
+    } finally {
+      setSeedingDefaults(false);
+    }
+  };
 
   const handleMove = async (index: number, delta: -1 | 1) => {
     const target = index + delta;
@@ -71,10 +101,10 @@ export function CategoriesTab({
     }
   };
 
-  const handleIconUpload = async (file: File | null) => {
+  const handleCategoryImageUpload = async (file: File | null) => {
     if (!file || !editing) return;
-    const dataUrl = await compressImageFileToDataUrl(file, 160, 25_000);
-    setEditing({ ...editing, icon: dataUrl });
+    const dataUrl = await compressImageFileToDataUrl(file, 400, 45_000);
+    setEditing({ ...editing, imageUrl: dataUrl });
   };
 
   const addSubcategoryRow = () => {
@@ -98,27 +128,70 @@ export function CategoriesTab({
           <p className="text-sm text-[#566058]">{t.categories.subtitle}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setIsCreating(true);
-            setEditing({
-              id: `cat-${Date.now().toString(36)}`,
-              nameKu: '',
-              nameAr: '',
-              nameEn: '',
-              icon: '🛒',
-              subcategories: [],
-              sortOrder: categories.length + 1,
-              isActive: true,
-            });
-          }}
-          className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-[#15663C] px-4 text-xs font-semibold text-white hover:bg-[#105230]"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          <span>{t.categories.addCategory}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            data-testid="load-default-categories-btn"
+            disabled={seedingDefaults || loading}
+            onClick={() => void handleLoadDefaultCategories()}
+            className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-[#15663C] bg-[#F0FDF4] px-4 text-xs font-bold text-[#15663C] transition-colors hover:bg-[#DCFCE7] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {seedingDefaults ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+            )}
+            <span>
+              {seedingDefaults
+                ? t.categories.loadingDefaults
+                : t.categories.loadDefaultsButton}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsCreating(true);
+              setEditing({
+                id: `cat-${Date.now().toString(36)}`,
+                nameKu: '',
+                nameAr: '',
+                nameEn: '',
+                icon: FALLBACK_CATEGORY_PHOTO,
+                imageUrl: '',
+                subcategories: [],
+                sortOrder: categories.length + 1,
+                isActive: true,
+              });
+            }}
+            className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-[#15663C] px-4 text-xs font-semibold text-white hover:bg-[#105230]"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span>{t.categories.addCategory}</span>
+          </button>
+        </div>
       </div>
+
+      {seedNotice && (
+        <div
+          role="status"
+          data-testid="seed-defaults-notice"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 text-xs font-semibold text-[#14532D] sm:text-sm"
+        >
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16A34A]" aria-hidden="true" />
+            <span>{seedNotice}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setSeedNotice(null)}
+            aria-label={t.common.close}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#15803D] hover:bg-[#DCFCE7]"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       <div className="divide-y divide-[#ECEFEA] rounded-xl border border-[#E5E7E4] bg-white">
         {loading ? (
@@ -136,20 +209,18 @@ export function CategoriesTab({
               className="flex flex-wrap items-center justify-between gap-3 p-4"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#E5E7E4] bg-[#FAFBF9] text-lg">
-                  {cat.icon.startsWith('data:image') || cat.icon.startsWith('http') || cat.icon.startsWith('/') ? (
-                    <img
-                      src={cat.icon}
-                      alt=""
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{cat.icon.length <= 4 ? cat.icon : '🛒'}</span>
-                  )}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#E5E7E4] bg-white p-1">
+                  <img
+                    src={resolveCategoryPhotoSrc(cat)}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => {
+                      if (!e.currentTarget.src.endsWith(FALLBACK_CATEGORY_PHOTO)) {
+                        e.currentTarget.src = FALLBACK_CATEGORY_PHOTO;
+                      }
+                    }}
+                    className="h-full w-full object-contain"
+                  />
                 </div>
                 <div>
                   <p className="font-display text-sm font-bold text-[#141A15]">
@@ -285,28 +356,80 @@ export function CategoriesTab({
                 </div>
               </div>
 
+              {/* Category Tile Image (400x400 auto-compressed, Spark-plan friendly) */}
+              <div className="space-y-2 rounded-xl border border-[#E5E7E4] bg-[#FAFBF9] p-3.5">
+                <label className="block text-xs font-semibold text-[#3F4841]">
+                  {t.categories.imageLabel}
+                </label>
+                <p className="text-[11px] leading-relaxed text-[#616B63]">
+                  {t.categories.imageHint}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#D4DAD2] bg-white p-1">
+                    <img
+                      src={resolveCategoryPhotoSrc(editing)}
+                      alt=""
+                      onError={(e) => {
+                        if (!e.currentTarget.src.endsWith(FALLBACK_CATEGORY_PHOTO)) {
+                          e.currentTarget.src = FALLBACK_CATEGORY_PHOTO;
+                        }
+                      }}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#15663C] bg-[#EFF6F2] px-3.5 text-xs font-semibold text-[#15663C] hover:bg-[#DFEDE5]">
+                        <Upload className="h-4 w-4" aria-hidden="true" />
+                        <span>{t.common.uploadImage}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) =>
+                            void handleCategoryImageUpload(e.target.files?.[0] ?? null)
+                          }
+                        />
+                      </label>
+
+                      {editing.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditing({ ...editing, imageUrl: '' })}
+                          className="min-h-[44px] rounded-xl border border-[#F0C9C4] bg-[#FDF2F0] px-3 text-xs font-semibold text-[#9A2E20]"
+                        >
+                          {t.categories.removeImage}
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={editing.imageUrl || ''}
+                      placeholder={t.common.imageUrlPlaceholder}
+                      onChange={(e) =>
+                        setEditing({ ...editing, imageUrl: e.target.value })
+                      }
+                      className="min-h-[44px] w-full rounded-xl border border-[#D4DAD2] bg-white px-3 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Fallback Emoji / Icon */}
               <div>
                 <label className="block text-xs font-semibold text-[#3F4841]">
                   {t.categories.iconLabel}
                 </label>
-                <div className="mt-1 flex gap-2">
-                  <input
-                    type="text"
-                    value={editing.icon}
-                    onChange={(e) => setEditing({ ...editing, icon: e.target.value })}
-                    className="min-h-[48px] flex-1 rounded-xl border border-[#D4DAD2] px-3 text-sm"
-                  />
-                  <label className="inline-flex min-h-[48px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#15663C] bg-[#EFF6F2] px-4 text-xs font-semibold text-[#15663C]">
-                    <Upload className="h-4 w-4" aria-hidden="true" />
-                    <span>{t.common.uploadImage}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => void handleIconUpload(e.target.files?.[0] ?? null)}
-                    />
-                  </label>
-                </div>
+                <input
+                  type="text"
+                  value={editing.icon}
+                  onChange={(e) => setEditing({ ...editing, icon: e.target.value })}
+                  placeholder="🍅 / 🥛 / 🛒"
+                  className="mt-1 min-h-[48px] w-full rounded-xl border border-[#D4DAD2] px-3 text-sm"
+                />
               </div>
 
               {/* Subcategories */}

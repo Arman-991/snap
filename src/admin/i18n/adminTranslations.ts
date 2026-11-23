@@ -113,6 +113,13 @@ export interface AdminDictionary {
     subcategories: string;
     addSubcategory: string;
     iconLabel: string;
+    imageLabel: string;
+    imageHint: string;
+    removeImage: string;
+    loadDefaultsButton: string;
+    loadingDefaults: string;
+    defaultsAddedMsg: string;
+    defaultsAlreadyPresentMsg: string;
   };
   customers: {
     title: string;
@@ -310,12 +317,19 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
     },
     categories: {
       title: 'Categories Management',
-      subtitle: 'Edit trilingual department names, icons, subcategories, visibility, and sort order.',
+      subtitle: 'Edit trilingual department names, category photos, fallback emojis, subcategories, and sort order.',
       addCategory: 'Add Category',
       editCategory: 'Edit Category',
       subcategories: 'Subcategories',
       addSubcategory: 'Add Subcategory',
-      iconLabel: 'Emoji or uploaded icon',
+      iconLabel: 'Fallback emoji or icon',
+      imageLabel: 'Category tile image (400×400 auto-compressed, optional)',
+      imageHint: 'Upload a square photo (auto-compressed <45KB, zero Cloud Storage cost) or paste an image URL. Leave blank to use studio grocery fallback.',
+      removeImage: 'Remove image',
+      loadDefaultsButton: 'Load Default 15 Supermarket Categories',
+      loadingDefaults: 'Loading categories…',
+      defaultsAddedMsg: 'Added {count} default supermarket categories.',
+      defaultsAlreadyPresentMsg: 'All 15 default supermarket categories are already loaded.',
     },
     customers: {
       title: 'Customers & Blocklist',
@@ -511,12 +525,19 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
     },
     categories: {
       title: 'بەڕێوەبردنی بەشەکان',
-      subtitle: 'ناوی سێ‌زمانە، ژێربەشەکان، ئایکۆن، شاردنەوە و ڕیزبەندی.',
+      subtitle: 'ناوی سێ‌زمانە، وێنەی بەش، ئیمۆجی، ژێربەشەکان و ڕیزبەندی.',
       addCategory: 'زیادکردنی بەش',
       editCategory: 'دەستکاری بەش',
       subcategories: 'ژێربەشەکان',
       addSubcategory: 'زیادکردنی ژێربەش',
-      iconLabel: 'ئیمۆجی یان وێنەی ئایکۆن',
+      iconLabel: 'ئیمۆجی یان ئایکۆنی جێگرەوە',
+      imageLabel: 'وێنەی بەش (400×400 پەستێوراو، ئارەزوومەندانە)',
+      imageHint: 'وێنەیەک باربکە (بەخۆکارانە بۆ خوار 45KB دەپەستێورێت) یان بەستەری وێنە دابنێ.',
+      removeImage: 'لابردنی وێنە',
+      loadDefaultsButton: 'بارکردنی ١٥ پۆلی سەرەکی سوپەرمارکێت',
+      loadingDefaults: 'بارکردنی پۆلەکان…',
+      defaultsAddedMsg: '{count} پۆلی سەرەکی سوپەرمارکێت زیادکران.',
+      defaultsAlreadyPresentMsg: 'هەموو ١٥ پۆلی سەرەکی پێشتر بارکراون.',
     },
     customers: {
       title: 'کڕیارەکان و لیستی بلۆک',
@@ -712,12 +733,19 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
     },
     categories: {
       title: 'إدارة الأقسام',
-      subtitle: 'الأسماء الثلاثية والأقسام الفرعية والأيقونات والترتيب.',
+      subtitle: 'الأسماء الثلاثية وصور الأقسام والإيموجي والأقسام الفرعية والترتيب.',
       addCategory: 'إضافة قسم',
       editCategory: 'تعديل قسم',
       subcategories: 'الأقسام الفرعية',
       addSubcategory: 'إضافة قسم فرعي',
-      iconLabel: 'إيموجي أو صورة أيقونة',
+      iconLabel: 'إيموجي أو أيقونة بديلة',
+      imageLabel: 'صورة القسم (مضغوطة تلقائياً 400×400، اختياري)',
+      imageHint: 'ارفع صورة مربعة (تُضغط تلقائياً لأقل من 45KB بدون تكلفة Storage) أو الصق رابط صورة.',
+      removeImage: 'إزالة الصورة',
+      loadDefaultsButton: 'تحميل 15 قسماً افتراضياً للسوبرماركت',
+      loadingDefaults: 'جاري تحميل الأقسام…',
+      defaultsAddedMsg: 'تمت إضافة {count} قسماً افتراضياً بنجاح.',
+      defaultsAlreadyPresentMsg: 'جميع الأقسام الافتراضية الـ 15 محمّلة بالفعل.',
     },
     customers: {
       title: 'العملاء وقائمة الحظر',

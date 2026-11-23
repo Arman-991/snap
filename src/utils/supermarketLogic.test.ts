@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ERBIL_QUICK_STAPLES,
   buildGoogleMapsUrl,
   buildWhatsAppUrl,
   calculateLiveCartSummary,
@@ -10,21 +11,31 @@ import {
   doesCartMatchOrder,
   evaluateOrdersForCartClear,
   extractFirstName,
+  findMissingDefaultCategories,
   findUnseenDeliveredOrder,
   formatDeliveredThankYouTemplate,
   formatLifetimeSavingsSummary,
   formatOrderAlertText,
   hasStaleCartFromOrders,
+  isQuickListItemFulfilledByCart,
   mapCustomerVisibleStatus,
+  matchInStockProductsForListItem,
   matchesProductSearch,
   normalizeIraqiPhone,
   normalizeSearchText,
   reorderCartItemsFromLiveCatalog,
+  resolveCategoryPhotoSrc,
+  resolveCategoryTileMedia,
   resolveLiveCartLines,
+  resolveStorefrontCategories,
   updateCartItems,
   validateProfileForm,
 } from './supermarketLogic';
-import type { OrderRecord, Product } from '../types/grocery';
+import {
+  DEFAULT_15_CATEGORIES,
+  FALLBACK_CATEGORY_PHOTO,
+} from '../data/defaultCategories';
+import type { Category, OrderRecord, Product } from '../types/grocery';
 
 const sampleProducts: Product[] = [
   {
@@ -505,6 +516,224 @@ test('findUnseenDeliveredOrder returns most recent unseen Delivered order and fu
   assert.equal(result.lifetimeSavings, 7000); // 1500 + 2500 + 3000
   assert.equal(result.deliveredOrderCount, 3);
 });
+
+test('resolveCategoryTileMedia prioritizes imageUrl, then icon image, then representative product image, then emoji', () => {
+  const baseCat: Category = {
+    id: 'produce',
+    nameKu: 'سەوزە و میوە',
+    nameAr: 'خضار وفواكه',
+    nameEn: 'Fresh Produce',
+    icon: 'Carrot',
+    subcategories: [],
+    sortOrder: 1,
+    isActive: true,
+  };
+
+  assert.deepEqual(
+    resolveCategoryTileMedia(
+      { ...baseCat, imageUrl: 'data:image/jpeg;base64,abc' },
+      sampleProducts
+    ),
+    { kind: 'image', src: 'data:image/jpeg;base64,abc' }
+  );
+
+  assert.deepEqual(
+    resolveCategoryTileMedia(
+      { ...baseCat, icon: 'https://example.com/cat.png' },
+      sampleProducts
+    ),
+    { kind: 'image', src: 'https://example.com/cat.png' }
+  );
+
+  assert.deepEqual(resolveCategoryTileMedia(baseCat, sampleProducts), {
+    kind: 'image',
+    src: '/tomato.jpg',
+  });
+
+  assert.deepEqual(
+    resolveCategoryTileMedia({ ...baseCat, id: 'custom', icon: '🧺' }, []),
+    { kind: 'emoji', value: '🧺' }
+  );
+
+  assert.deepEqual(resolveCategoryTileMedia(baseCat, []), {
+    kind: 'emoji',
+    value: '🍅',
+  });
+});
+
+test('matchInStockProductsForListItem matches KU/AR/EN queries & Erbil staples and excludes out-of-stock/inactive items', () => {
+  const extendedProducts: Product[] = [
+    ...sampleProducts,
+    {
+      id: 'p-tomato-oos',
+      categoryId: 'produce',
+      subcategoryId: 'vegetables',
+      nameKu: 'تەماتەی تەواوبوو',
+      nameAr: 'طماطم نافدة',
+      nameEn: 'Out of Stock Tomatoes',
+      size: '1 kg',
+      ourPrice: 900,
+      marketPrice: 1200,
+      imageUrl: '/tomato2.jpg',
+      section: 'popular',
+      inStock: false,
+      isActive: true,
+    },
+  ];
+
+  const kuMatches = matchInStockProductsForListItem('تەماتە', extendedProducts);
+  assert.deepEqual(
+    kuMatches.map((p) => p.id),
+    ['p-tomato']
+  );
+
+  const arMatches = matchInStockProductsForListItem('خبز / صمون', extendedProducts);
+  assert.deepEqual(
+    arMatches.map((p) => p.id),
+    ['p-bread']
+  );
+
+  assert.equal(ERBIL_QUICK_STAPLES.length, 10);
+});
+
+test('isQuickListItemFulfilledByCart returns true as soon as any matched product is in the cart', () => {
+  const matches = [sampleProducts[0], sampleProducts[1]];
+  assert.equal(
+    isQuickListItemFulfilledByCart(matches, () => 0),
+    false
+  );
+  assert.equal(
+    isQuickListItemFulfilledByCart(matches, (id) => (id === 'p-bread' ? 2 : 0)),
+    true
+  );
+});
+
+test('DEFAULT_15_CATEGORIES provides 15 trilingual supermarket categories with local studio photos', () => {
+  assert.equal(DEFAULT_15_CATEGORIES.length, 15);
+  const ids = new Set(DEFAULT_15_CATEGORIES.map((c) => c.id));
+  assert.equal(ids.size, 15);
+
+  for (const cat of DEFAULT_15_CATEGORIES) {
+    assert.ok(cat.nameEn.trim().length > 0, `missing EN for ${cat.id}`);
+    assert.ok(cat.nameKu.trim().length > 0, `missing KU for ${cat.id}`);
+    assert.ok(cat.nameAr.trim().length > 0, `missing AR for ${cat.id}`);
+    assert.ok(
+      cat.imageUrl?.startsWith('/categories/') && cat.imageUrl.endsWith('.jpg'),
+      `expected studio photo for ${cat.id}, got ${cat.imageUrl}`
+    );
+  }
+});
+
+test('resolveCategoryPhotoSrc always returns a real grocery photo URL and never an emoji', () => {
+  assert.equal(
+    resolveCategoryPhotoSrc({
+      id: 'custom-1',
+      nameEn: 'fruit',
+      nameKu: 'mewa',
+      nameAr: 'fawakiha',
+      icon: '🛒',
+      imageUrl: '',
+    }),
+    '/categories/fruits-vegetables.jpg'
+  );
+
+  assert.equal(
+    resolveCategoryPhotoSrc({
+      id: 'custom-2',
+      nameEn: 'Uploaded Photo',
+      nameKu: 'وێنە',
+      nameAr: 'صورة',
+      icon: '🛒',
+      imageUrl: 'data:image/jpeg;base64,abc123',
+    }),
+    'data:image/jpeg;base64,abc123'
+  );
+
+  assert.equal(
+    resolveCategoryPhotoSrc({
+      id: 'unknown-xyz',
+      nameEn: 'Misc Goods',
+      nameKu: 'جۆراوجۆر',
+      nameAr: 'متنوعات',
+      icon: '📦',
+      imageUrl: '',
+    }),
+    FALLBACK_CATEGORY_PHOTO
+  );
+});
+
+test('findMissingDefaultCategories skips duplicates by ID or normalized name and preserves custom categories', () => {
+  const existing: Category[] = [
+    {
+      id: 'cat-mwnnrhz0',
+      nameEn: 'fruit',
+      nameKu: 'mewa',
+      nameAr: 'fawakiha',
+      icon: '🛒',
+      subcategories: [],
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      id: 'dairy',
+      nameEn: 'Dairy Custom',
+      nameKu: 'شیرەمەنی',
+      nameAr: 'ألبان',
+      icon: '🥛',
+      subcategories: [],
+      sortOrder: 2,
+      isActive: true,
+    },
+    {
+      id: 'custom-bakery-id',
+      nameEn: 'Bread & Bakery',
+      nameKu: 'نان و نانەواخانە',
+      nameAr: 'خبز ومخبوزات',
+      icon: '🥖',
+      subcategories: [],
+      sortOrder: 3,
+      isActive: true,
+    },
+  ];
+
+  const missing = findMissingDefaultCategories(existing, DEFAULT_15_CATEGORIES);
+  assert.equal(missing.length, 13);
+  assert.equal(missing.some((c) => c.id === 'dairy'), false);
+  assert.equal(missing.some((c) => c.id === 'bakery'), false);
+  assert.equal(missing.some((c) => c.id === 'produce'), true);
+});
+
+test('resolveStorefrontCategories shows all 15 defaults when Firestore has < 3 docs, and obeys Firestore strictly when >= 3 docs', () => {
+  const oneCustom: Category[] = [
+    {
+      id: 'cat-mwnnrhz0',
+      nameEn: 'fruit',
+      nameKu: 'mewa',
+      nameAr: 'fawakiha',
+      icon: '🛒',
+      subcategories: [],
+      sortOrder: 1,
+      isActive: true,
+    },
+  ];
+  const merged = resolveStorefrontCategories(oneCustom, DEFAULT_15_CATEGORIES);
+  assert.equal(merged.length, 16);
+  assert.equal(merged[0].id, 'produce');
+  assert.equal(merged[15].id, 'cat-mwnnrhz0');
+
+  const populatedFirestore: Category[] = [
+    { ...DEFAULT_15_CATEGORIES[0], isActive: true },
+    { ...DEFAULT_15_CATEGORIES[1], isActive: false },
+    { ...DEFAULT_15_CATEGORIES[2], isActive: true },
+  ];
+  const strict = resolveStorefrontCategories(populatedFirestore, DEFAULT_15_CATEGORIES);
+  assert.deepEqual(
+    strict.map((c) => c.id),
+    ['produce', 'bakery']
+  );
+});
+
+
 
 
 

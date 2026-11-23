@@ -39,8 +39,10 @@ import type {
   StoreSettings,
   UserProfile,
 } from '../../types/grocery';
+import { DEFAULT_15_CATEGORIES } from '../../data/defaultCategories';
 import {
   cartOverlapsOrder,
+  findMissingDefaultCategories,
   normalizeIraqiPhone,
 } from '../../utils/supermarketLogic';
 
@@ -465,6 +467,7 @@ export async function fetchAllCategoriesAdmin(): Promise<Category[]> {
           nameAr: String(d.nameAr || ''),
           nameEn: String(d.nameEn || ''),
           icon: String(d.icon || '🛒'),
+          imageUrl: typeof d.imageUrl === 'string' ? d.imageUrl : '',
           subcategories: Array.isArray(d.subcategories) ? d.subcategories : [],
           sortOrder: Number(d.sortOrder || 0),
           isActive: Boolean(d.isActive),
@@ -476,6 +479,26 @@ export async function fetchAllCategoriesAdmin(): Promise<Category[]> {
   }
 }
 
+function buildCategoryPayload(category: Category, sortOrderOverride?: number) {
+  const payload: Record<string, unknown> = {
+    id: category.id.trim().slice(0, 64),
+    nameKu: category.nameKu.trim().slice(0, 80),
+    nameAr: category.nameAr.trim().slice(0, 80),
+    nameEn: category.nameEn.trim().slice(0, 80),
+    icon: (category.icon || '🛒').slice(0, 90000),
+    subcategories: category.subcategories.slice(0, 20),
+    sortOrder: Math.max(
+      0,
+      Math.min(1000, Math.round(sortOrderOverride ?? category.sortOrder))
+    ),
+    isActive: Boolean(category.isActive),
+  };
+  if (typeof category.imageUrl === 'string') {
+    payload.imageUrl = category.imageUrl.trim().slice(0, 90000);
+  }
+  return payload;
+}
+
 export async function saveCategoryAdmin(
   actor: AdminActor,
   category: Category,
@@ -483,16 +506,7 @@ export async function saveCategoryAdmin(
 ): Promise<void> {
   const path = `categories/${category.id}`;
   try {
-    await setDoc(doc(db, 'categories', category.id), {
-      id: category.id.trim().slice(0, 64),
-      nameKu: category.nameKu.trim().slice(0, 80),
-      nameAr: category.nameAr.trim().slice(0, 80),
-      nameEn: category.nameEn.trim().slice(0, 80),
-      icon: (category.icon || '🛒').slice(0, 90000),
-      subcategories: category.subcategories.slice(0, 20),
-      sortOrder: Math.max(0, Math.min(1000, Math.round(category.sortOrder))),
-      isActive: Boolean(category.isActive),
-    });
+    await setDoc(doc(db, 'categories', category.id), buildCategoryPayload(category));
     await logAdminAction(
       actor,
       isNew ? 'CREATE_CATEGORY' : 'UPDATE_CATEGORY',
@@ -530,10 +544,10 @@ export async function reorderCategoriesAdmin(
   try {
     const batch = writeBatch(db);
     ordered.forEach((cat, idx) => {
-      batch.set(doc(db, 'categories', cat.id), {
-        ...cat,
-        sortOrder: idx + 1,
-      });
+      batch.set(
+        doc(db, 'categories', cat.id),
+        buildCategoryPayload(cat, idx + 1)
+      );
     });
     await batch.commit();
     await logAdminAction(
@@ -543,6 +557,43 @@ export async function reorderCategoriesAdmin(
       'order',
       `Reordered ${ordered.length} categories`
     );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, 'categories');
+  }
+}
+
+export async function seedMissingDefaultCategoriesAdmin(
+  actor: AdminActor,
+  existingCategories: Category[]
+): Promise<number> {
+  const missing = findMissingDefaultCategories(
+    existingCategories,
+    DEFAULT_15_CATEGORIES
+  );
+  if (missing.length === 0) return 0;
+
+  try {
+    const batch = writeBatch(db);
+    const maxSort = existingCategories.reduce(
+      (max, cat) => Math.max(max, Number(cat.sortOrder) || 0),
+      0
+    );
+    missing.forEach((cat, idx) => {
+      batch.set(
+        doc(db, 'categories', cat.id),
+        buildCategoryPayload(cat, maxSort > 0 ? maxSort + idx + 1 : cat.sortOrder)
+      );
+    });
+    await batch.commit();
+    await logAdminAction(
+      actor,
+      'SEED_DEFAULT_CATEGORIES',
+      'categories',
+      `defaults_${missing.length}`,
+      `Loaded ${missing.length} default supermarket categories`,
+      { addedIds: missing.map((c) => c.id) }
+    );
+    return missing.length;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'categories');
   }

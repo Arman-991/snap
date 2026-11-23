@@ -143,13 +143,14 @@ service cloud.firestore {
           'id', 'nameKu', 'nameAr', 'nameEn', 'icon', 'subcategories', 'sortOrder', 'isActive'
         ]) &&
         data.keys().hasOnly([
-          'id', 'nameKu', 'nameAr', 'nameEn', 'icon', 'subcategories', 'sortOrder', 'isActive'
+          'id', 'nameKu', 'nameAr', 'nameEn', 'icon', 'imageUrl', 'subcategories', 'sortOrder', 'isActive'
         ]) &&
         data.id == categoryId &&
         data.nameKu is string && data.nameKu.size() >= 1 && data.nameKu.size() <= 80 &&
         data.nameAr is string && data.nameAr.size() >= 1 && data.nameAr.size() <= 80 &&
         data.nameEn is string && data.nameEn.size() >= 1 && data.nameEn.size() <= 80 &&
         data.icon is string && data.icon.size() >= 1 && data.icon.size() <= 90000 &&
+        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 90000)) &&
         data.subcategories is list && data.subcategories.size() <= 20 &&
         (data.subcategories.size() == 0 || data.subcategories[0] is map) &&
         data.sortOrder is number && data.sortOrder >= 0 && data.sortOrder <= 1000 &&

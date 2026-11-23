@@ -4,6 +4,7 @@ export interface TranslationDictionary {
   brandName: string;
   nav: {
     market: string;
+    categories: string;
     deals: string;
     orders: string;
     profile: string;
@@ -204,6 +205,34 @@ export interface TranslationDictionary {
     alertsUnsupportedHint: string;
     alertsIosInstallHint: string;
   };
+  categoriesPage: {
+    title: string;
+    shopByCategoriesTitle: string;
+    subtitle: string;
+    allCategoriesShortcut: string;
+    showAllItems: string;
+    searchInCategory: string;
+    backToCategories: string;
+    emptyCategoryTitle: string;
+    emptyCategoryBody: string;
+    floatingCartView: string;
+  };
+  quickList: {
+    bannerText: string;
+    shortTitle: string;
+    subtitle: string;
+    staplesHeading: string;
+    inputPlaceholder: string;
+    addToList: string;
+    clearList: string;
+    removeItem: string;
+    emptyTitle: string;
+    emptyHint: string;
+    noMatches: string;
+    inCartBadge: string;
+    stickyCartCta: string;
+    backToMarket: string;
+  };
   footer: {
     tagline: string;
     copyright: string;
@@ -227,6 +256,7 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     brandName: 'بازاڕ فرێش',
     nav: {
       market: 'سوپەرمارکێت',
+      categories: 'بەشەکان',
       deals: 'داشکاندن',
       orders: 'داواکارییەکان',
       profile: 'پڕۆفایل',
@@ -453,6 +483,34 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       alertsIosInstallHint:
         'لەسەر ئایفۆن، کرتە لە Share ← Add to Home Screen بکە بۆ وەرگرتنی ئاگادارکردنەوە.',
     },
+    categoriesPage: {
+      title: 'پۆلەکان',
+      shopByCategoriesTitle: 'کڕین بەپێی پۆلەکان',
+      subtitle: 'بە خێرایی بەپێی پۆلەکانی سوپەرمارکێت بگەڕێ.',
+      allCategoriesShortcut: 'هەموو پۆلەکان',
+      showAllItems: 'پیشاندانی هەموو بەرهەمەکان',
+      searchInCategory: 'گەڕان لەم پۆلەدا…',
+      backToCategories: 'گەڕانەوە بۆ پۆلەکان',
+      emptyCategoryTitle: 'هیچ بەرهەمێک لەم پۆلەدا نەدۆزرایەوە',
+      emptyCategoryBody: 'ژێرپۆلێکی تر هەڵبژێرە یان وشەی گەڕانەکە بسڕەوە.',
+      floatingCartView: 'بینینی سەبەتە',
+    },
+    quickList: {
+      bannerText: 'لیستی کڕینی خێرا — هەموو پێداویستییەکانت بە یەکجار هەڵبژێرە',
+      shortTitle: 'لیستی کڕینی خێرا',
+      subtitle: 'پێداویستییەکانی ڕۆژانەت بنووسە یان هەڵبژێرە، بەرهەمە بەردەستەکان ڕاستەوخۆ دێنە بەر دەستت.',
+      staplesHeading: 'پێداویستییە ڕۆژانەکانی هەولێر',
+      inputPlaceholder: 'پێداویستییەک بنووسە (بۆ نموونە: تەماتە، هێلکە، برنج)…',
+      addToList: 'زیادکردن بۆ لیست',
+      clearList: 'پاککردنەوەی لیست',
+      removeItem: 'لابردن لە لیست',
+      emptyTitle: 'لیستی کڕینەکەت هێشتا بەتاڵە',
+      emptyHint: 'لە سەرەوە پێداویستییە ڕۆژانەکان دابگرە یان هەر کاڵایەک دەتەوێت بینووسە.',
+      noMatches: 'هیچ بەرهەمێکی بەردەست بۆ ئەم ناوە نەدۆزرایەوە.',
+      inCartBadge: 'لە سەبەتەدایە',
+      stickyCartCta: 'بڕۆ سەبەتە و پاشەکەوتەکەت ببینە',
+      backToMarket: 'گەڕانەوە',
+    },
     footer: {
       tagline: 'سوپەرمارکێتی ڕۆژانەی هەولێر بە نرخی گونجاو و پارەدان لە کاتی گەیشتن.',
       copyright: '© ٢٠٢٦ بازاڕ فرێش',
@@ -462,6 +520,7 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     brandName: 'بازار فريش',
     nav: {
       market: 'السوبرماركت',
+      categories: 'الأقسام',
       deals: 'العروض',
       orders: 'طلباتي',
       profile: 'حسابي',
@@ -688,6 +747,34 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       alertsIosInstallHint:
         'على الآيفون، اضغط مشاركة (Share) ← إضافة إلى الشاشة الرئيسية لتصلك التنبيهات.',
     },
+    categoriesPage: {
+      title: 'الأقسام',
+      shopByCategoriesTitle: 'تسوق حسب الأقسام',
+      subtitle: 'تصفح أقسام السوبرماركت بسرعة وسهولة.',
+      allCategoriesShortcut: 'كل الأقسام',
+      showAllItems: 'عرض جميع المنتجات',
+      searchInCategory: 'ابحث في هذا القسم…',
+      backToCategories: 'العودة إلى الأقسام',
+      emptyCategoryTitle: 'لا توجد منتجات في هذا القسم حالياً',
+      emptyCategoryBody: 'جرّب قسماً فرعياً آخر أو امسح كلمة البحث.',
+      floatingCartView: 'عرض السلة',
+    },
+    quickList: {
+      bannerText: 'قائمة التسوق السريعة — اختر أغراضك دفعة واحدة',
+      shortTitle: 'قائمة التسوق السريعة',
+      subtitle: 'اكتب أو اختر احتياجاتك اليومية لتظهر لك المنتجات المتوفرة فوراً وتضيفها بنقرة واحدة.',
+      staplesHeading: 'احتياجات أربيل اليومية',
+      inputPlaceholder: 'اكتب غرضاً (مثال: طماطم، بيض، أرز)…',
+      addToList: 'إضافة للقائمة',
+      clearList: 'مسح القائمة',
+      removeItem: 'إزالة من القائمة',
+      emptyTitle: 'قائمة التسوق فارغة حالياً',
+      emptyHint: 'اضغط على أي غرض يومي من الأعلى أو اكتب ما يحتاجه بيتك.',
+      noMatches: 'لا توجد منتجات متوفرة مطابقة لهذا الاسم حالياً.',
+      inCartBadge: 'في السلة',
+      stickyCartCta: 'انتقل للسلة وشاهد توفيرك',
+      backToMarket: 'رجوع',
+    },
     footer: {
       tagline: 'سوبرماركت أربيل اليومي بأسعار أقل من السوق والدفع عند الاستلام.',
       copyright: '© 2026 بازار فريش',
@@ -697,6 +784,7 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     brandName: 'Bazar Fresh',
     nav: {
       market: 'Market',
+      categories: 'Categories',
       deals: 'Deals',
       orders: 'Orders',
       profile: 'Profile',
@@ -922,6 +1010,34 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       alertsUnsupportedHint: 'Browser alerts are not supported on this device.',
       alertsIosInstallHint:
         'On iPhone, tap Share → Add to Home Screen to receive alerts.',
+    },
+    categoriesPage: {
+      title: 'Categories',
+      shopByCategoriesTitle: 'Shop by Categories',
+      subtitle: 'Browse supermarket aisles cleanly and pick what you need.',
+      allCategoriesShortcut: 'All Categories',
+      showAllItems: 'Show All Items',
+      searchInCategory: 'Search in this category…',
+      backToCategories: 'Back to categories',
+      emptyCategoryTitle: 'No items match in this category',
+      emptyCategoryBody: 'Try another subcategory or clear your search.',
+      floatingCartView: 'View Cart',
+    },
+    quickList: {
+      bannerText: 'Quick Shopping List — Pick your essentials fast',
+      shortTitle: 'Quick Shopping List',
+      subtitle: 'Tap daily Erbil staples or type your grocery list to add matching in-stock items in seconds.',
+      staplesHeading: 'Daily Erbil Essentials',
+      inputPlaceholder: 'Type an item (e.g. tomatoes, eggs, rice)…',
+      addToList: 'Add to list',
+      clearList: 'Clear list',
+      removeItem: 'Remove from list',
+      emptyTitle: 'Your quick list is empty',
+      emptyHint: 'Tap any daily essential above or type an item to see matching groceries right away.',
+      noMatches: 'No in-stock products matched this item right now.',
+      inCartBadge: 'In cart',
+      stickyCartCta: 'Go to Cart & See Your Savings',
+      backToMarket: 'Back',
     },
     footer: {
       tagline: 'Daily Erbil neighborhood supermarket with transparent savings and Cash on Delivery.',

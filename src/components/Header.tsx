@@ -21,6 +21,7 @@ interface HeaderProps {
   onSelectNotification: (item: CustomerNotificationItem) => void;
   onMarkAllNotificationsRead: () => void;
   onSelectMarket: () => void;
+  onSelectCategories: () => void;
   onSelectDeals: () => void;
   onSelectOrders: () => void;
   onSelectProfile: () => void;
@@ -38,6 +39,7 @@ export function Header({
   onSelectNotification,
   onMarkAllNotificationsRead,
   onSelectMarket,
+  onSelectCategories,
   onSelectDeals,
   onSelectOrders,
   onSelectProfile,
@@ -125,6 +127,18 @@ export function Header({
             }`}
           >
             {t.nav.market}
+          </button>
+          <button
+            type="button"
+            data-testid="header-nav-categories"
+            onClick={onSelectCategories}
+            className={`min-h-[48px] rounded-xl px-4 text-sm font-semibold transition-colors whitespace-nowrap ${
+              activeView === 'categories' || activeView === 'quicklist'
+                ? 'bg-[#EFF6F2] text-[var(--brand-primary)]'
+                : 'text-[#4E5750] hover:bg-[#F4F6F3] hover:text-[#141A15]'
+            }`}
+          >
+            {t.nav.categories}
           </button>
           <button
             type="button"

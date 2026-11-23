@@ -1,5 +1,6 @@
 import type {
   CartItem,
+  Category,
   GpsCoordinates,
   Language,
   LiveCartSummary,
@@ -11,6 +12,10 @@ import type {
   ResolvedCartLine,
   StoreSettings,
 } from '../types/grocery';
+import {
+  FALLBACK_CATEGORY_PHOTO,
+  resolveDefaultPhotoForCategory,
+} from '../data/defaultCategories';
 
 export const MAX_CART_QUANTITY = 50;
 
@@ -599,3 +604,336 @@ export function buildWhatsAppUrl(
   const message = buildWhatsAppOrderMessage(order, lang);
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
+
+// --- Category Visual Grid & Quick Shopping List Logic ---
+
+export interface QuickStaplePreset {
+  id: string;
+  labelKu: string;
+  labelAr: string;
+  labelEn: string;
+  searchTerms: string[];
+}
+
+export const ERBIL_QUICK_STAPLES: QuickStaplePreset[] = [
+  {
+    id: 'bread',
+    labelKu: 'نان / سەموون',
+    labelAr: 'خبز / صمون',
+    labelEn: 'Bread / Samoon',
+    searchTerms: ['نان', 'سەموون', 'خبز', 'صمون', 'bread', 'samoon', 'flatbread'],
+  },
+  {
+    id: 'tomatoes',
+    labelKu: 'تەماتە',
+    labelAr: 'طماطم',
+    labelEn: 'Tomatoes',
+    searchTerms: ['تەماتە', 'تماته', 'طماطم', 'tomato', 'tomatoes'],
+  },
+  {
+    id: 'milk',
+    labelKu: 'شیر / ماست',
+    labelAr: 'حليب / لبن',
+    labelEn: 'Milk / Laban',
+    searchTerms: ['شیر', 'ماست', 'دۆ', 'حليب', 'لبن', 'milk', 'yogurt', 'laban', 'doogh'],
+  },
+  {
+    id: 'eggs',
+    labelKu: 'هێلکە',
+    labelAr: 'بيض',
+    labelEn: 'Eggs',
+    searchTerms: ['هێلکە', 'هيلكه', 'بيض', 'egg', 'eggs'],
+  },
+  {
+    id: 'rice',
+    labelKu: 'برنج',
+    labelAr: 'أرز',
+    labelEn: 'Rice',
+    searchTerms: ['برنج', 'أرز', 'ارز', 'تمن', 'rice', 'basmati'],
+  },
+  {
+    id: 'oil',
+    labelKu: 'زەیتی چێشت',
+    labelAr: 'زيت طبخ',
+    labelEn: 'Cooking Oil',
+    searchTerms: ['زەیت', 'زيت', 'ڕۆن', 'سمن', 'oil', 'olive', 'sunflower', 'ghee'],
+  },
+  {
+    id: 'water',
+    labelKu: 'ئاو',
+    labelAr: 'ماء',
+    labelEn: 'Water',
+    searchTerms: ['ئاو', 'ماء', 'مياه', 'water'],
+  },
+  {
+    id: 'tea',
+    labelKu: 'چا',
+    labelAr: 'شاي',
+    labelEn: 'Tea',
+    searchTerms: ['چا', 'چای', 'شاي', 'tea'],
+  },
+  {
+    id: 'chicken',
+    labelKu: 'مریشک',
+    labelAr: 'دجاج',
+    labelEn: 'Chicken',
+    searchTerms: ['مریشک', 'مريشك', 'دجاج', 'chicken', 'poultry'],
+  },
+  {
+    id: 'dish_soap',
+    labelKu: 'سێرڤ / سابوونی قاپ',
+    labelAr: 'سائل غسيل الصحون',
+    labelEn: 'Dish Soap',
+    searchTerms: [
+      'قاپ',
+      'سابوون',
+      'پاککەرەوە',
+      'تایت',
+      'صحون',
+      'غسيل',
+      'منظف',
+      'سائل',
+      'dish',
+      'soap',
+      'detergent',
+      'cleaning',
+    ],
+  },
+];
+
+const CATEGORY_FALLBACK_EMOJI: Record<string, string> = {
+  produce: '🍅',
+  dairy: '🥛',
+  bakery: '🥖',
+  meat: '🍗',
+  grains: '🌾',
+  pantry: '🫒',
+  beverages: '🫖',
+  breakfast: '🍯',
+  snacks: '🥜',
+  spices: '🌶️',
+  personal_care: '🧴',
+  cleaning: '🫧',
+  Carrot: '🍅',
+  Milk: '🥛',
+  Croissant: '🥖',
+  Beef: '🍗',
+  Wheat: '🌾',
+  Droplets: '🫒',
+  Coffee: '🫖',
+  Sun: '🍯',
+  Cookie: '🥜',
+  Sparkles: '🌶️',
+  Heart: '🧴',
+  SprayCan: '🫧',
+  Package: '🛒',
+};
+
+export function isImageLikeUrl(val?: string | null): boolean {
+  if (!val) return false;
+  const trimmed = val.trim();
+  return (
+    trimmed.startsWith('data:image/') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/')
+  );
+}
+
+export type CategoryTileMedia =
+  | { kind: 'image'; src: string }
+  | { kind: 'emoji'; value: string };
+
+/**
+ * Resolves the cleanest visual for a category tile:
+ * 1. Explicit category.imageUrl (uploaded 400x400 or URL)
+ * 2. Legacy category.icon if it is an image URL / data URI
+ * 3. First active product image in that category (gives rich photography out-of-the-box)
+ * 4. Short emoji in category.icon, or mapped grocery emoji fallback
+ */
+export function resolveCategoryTileMedia(
+  category: Category,
+  products: Product[]
+): CategoryTileMedia {
+  if (isImageLikeUrl(category.imageUrl)) {
+    return { kind: 'image', src: category.imageUrl!.trim() };
+  }
+  if (isImageLikeUrl(category.icon)) {
+    return { kind: 'image', src: category.icon.trim() };
+  }
+  const representative = products.find(
+    (p) => p.isActive && p.categoryId === category.id && isImageLikeUrl(p.imageUrl)
+  );
+  if (representative) {
+    return { kind: 'image', src: representative.imageUrl };
+  }
+  const trimmedIcon = (category.icon || '').trim();
+  if (trimmedIcon && !/^[A-Za-z0-9_-]+$/.test(trimmedIcon) && trimmedIcon.length <= 6) {
+    return { kind: 'emoji', value: trimmedIcon };
+  }
+  return {
+    kind: 'emoji',
+    value:
+      CATEGORY_FALLBACK_EMOJI[category.id] ||
+      CATEGORY_FALLBACK_EMOJI[trimmedIcon] ||
+      '🛒',
+  };
+}
+
+/**
+ * Matches in-stock, active Firestore products for a Quick Shopping List item.
+ * Supports free-text KU/AR/EN input, multi-word queries, and synonym terms for Erbil staples.
+ */
+export function matchInStockProductsForListItem(
+  rawQuery: string,
+  products: Product[],
+  extraSearchTerms: string[] = []
+): Product[] {
+  const normalizedQuery = normalizeSearchText(rawQuery);
+  if (!normalizedQuery && extraSearchTerms.length === 0) return [];
+
+  // Build candidate search tokens from user query and any staple preset synonyms
+  const presetFromQuery = ERBIL_QUICK_STAPLES.find((staple) => {
+    const candidates = [
+      staple.labelKu,
+      staple.labelAr,
+      staple.labelEn,
+      ...staple.searchTerms,
+    ].map(normalizeSearchText);
+    return candidates.some(
+      (c) =>
+        c === normalizedQuery ||
+        (normalizedQuery.length >= 2 && (c.includes(normalizedQuery) || normalizedQuery.includes(c)))
+    );
+  });
+
+  const searchTokens = new Set<string>();
+  if (normalizedQuery) {
+    searchTokens.add(normalizedQuery);
+    for (const part of normalizedQuery.split(/[\s/،,+-]+/)) {
+      if (part.length >= 2) searchTokens.add(part);
+    }
+  }
+  for (const term of extraSearchTerms) {
+    const clean = normalizeSearchText(term);
+    if (clean) searchTokens.add(clean);
+  }
+  if (presetFromQuery) {
+    for (const term of presetFromQuery.searchTerms) {
+      const clean = normalizeSearchText(term);
+      if (clean) searchTokens.add(clean);
+    }
+  }
+
+  const tokensArray = Array.from(searchTokens);
+  const scored: Array<{ product: Product; score: number }> = [];
+
+  for (const product of products) {
+    if (!isProductOrderable(product)) continue;
+
+    let score = 0;
+    if (normalizedQuery && matchesProductSearch(product, normalizedQuery)) {
+      score += 10;
+    }
+
+    for (const token of tokensArray) {
+      if (matchesProductSearch(product, token)) {
+        score += 4;
+      }
+    }
+
+    if (score > 0) {
+      // Slight tie-break boost for discounted deals
+      const hasSavings = product.marketPrice > product.ourPrice ? 1 : 0;
+      scored.push({ product, score: score + hasSavings });
+    }
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.product.ourPrice - b.product.ourPrice)
+    .map((entry) => entry.product);
+}
+
+export function isQuickListItemFulfilledByCart(
+  matchedProducts: Product[],
+  getQuantity: (productId: string) => number
+): boolean {
+  return matchedProducts.some((product) => getQuantity(product.id) > 0);
+}
+
+/**
+ * Always resolves a clean real grocery photograph URL for a category card
+ * (never an emoji or empty string):
+ * 1. Explicit category.imageUrl (uploaded compressed photo or studio URL)
+ * 2. Image URL/data-URI in category.icon (legacy compatibility)
+ * 3. Studio grocery photo matched to category ID / KU / AR / EN name
+ * 4. Guaranteed local grocery fallback photo
+ */
+export function resolveCategoryPhotoSrc(
+  category: Pick<Category, 'id' | 'nameEn' | 'nameKu' | 'nameAr' | 'icon' | 'imageUrl'>
+): string {
+  if (isImageLikeUrl(category.imageUrl)) {
+    return category.imageUrl!.trim();
+  }
+  if (isImageLikeUrl(category.icon)) {
+    return category.icon.trim();
+  }
+  return resolveDefaultPhotoForCategory(category) || FALLBACK_CATEGORY_PHOTO;
+}
+
+/**
+ * Returns default supermarket categories that do not yet exist in Firestore
+ * (matching by ID or normalized KU/AR/EN name) so the Admin one-click loader
+ * never deletes or duplicates existing categories.
+ */
+export function findMissingDefaultCategories(
+  existingCategories: Category[],
+  defaultCategories: Category[]
+): Category[] {
+  const existingIds = new Set(existingCategories.map((c) => c.id.trim().toLowerCase()));
+  const existingNames = new Set<string>();
+  for (const cat of existingCategories) {
+    for (const candidate of [cat.nameEn, cat.nameKu, cat.nameAr]) {
+      const normalized = normalizeSearchText(candidate);
+      if (normalized) existingNames.add(normalized);
+    }
+  }
+
+  return defaultCategories.filter((def) => {
+    if (existingIds.has(def.id.trim().toLowerCase())) return false;
+    const defNames = [def.nameEn, def.nameKu, def.nameAr]
+      .map(normalizeSearchText)
+      .filter(Boolean);
+    return !defNames.some((name) => existingNames.has(name));
+  });
+}
+
+/**
+ * Resolves the active categories shown on the Customer storefront (Home & Categories tab):
+ * - Once Firestore contains 3+ categories (e.g. after Admin loads the 15 defaults or creates
+ *   their own aisle structure), Firestore is 100% authoritative (Admin hide/delete/reorder wins).
+ * - When Firestore has fewer than 3 categories (initial store setup with 0–2 test categories),
+ *   supplements with the missing default 15 studio supermarket categories so shoppers immediately
+ *   see a full, balanced supermarket visual photo grid while keeping existing custom categories accessible.
+ */
+export function resolveStorefrontCategories(
+  allFirestoreCategories: Category[],
+  defaultCategories: Category[]
+): Category[] {
+  const sortedFirestore = [...allFirestoreCategories].sort(
+    (a, b) => a.sortOrder - b.sortOrder
+  );
+  const activeFirestore = sortedFirestore.filter((cat) => cat.isActive);
+
+  if (sortedFirestore.length >= 3) {
+    return activeFirestore;
+  }
+
+  const missingDefaults = findMissingDefaultCategories(
+    sortedFirestore,
+    defaultCategories
+  );
+  return [...missingDefaults, ...activeFirestore];
+}
+
+

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { DEFAULT_15_CATEGORIES } from '../data/defaultCategories';
 import {
   DEFAULT_STORE_SETTINGS,
   SEED_BANNERS,
@@ -8,9 +9,9 @@ import {
 } from '../data/erbilSeedData';
 import {
   fetchActiveBanners,
-  fetchActiveCategories,
   fetchActiveProductsPage,
   fetchAllActiveProducts,
+  fetchAllCategoriesForStorefront,
   fetchCmsTranslations,
   fetchStoreSettings,
   seedSampleCatalogToFirestore,
@@ -25,7 +26,10 @@ import type {
   StoreSettings,
 } from '../types/grocery';
 import { matchesProductSectionFlag } from '../utils/adminLogic';
-import { matchesProductSearch } from '../utils/supermarketLogic';
+import {
+  matchesProductSearch,
+  resolveStorefrontCategories,
+} from '../utils/supermarketLogic';
 
 const PAGE_SIZE = 16;
 
@@ -55,12 +59,12 @@ export function useCatalog() {
     setStatus('loading');
     setErrorMessage(null);
     try {
-      const [liveSettings, liveCms, liveBanners, liveCategories, firstPage, allProducts] =
+      const [liveSettings, liveCms, liveBanners, liveAllCategories, firstPage, allProducts] =
         await Promise.all([
           fetchStoreSettings().catch(() => DEFAULT_STORE_SETTINGS),
           fetchCmsTranslations().catch(() => ({})),
           fetchActiveBanners().catch(() => []),
-          fetchActiveCategories(),
+          fetchAllCategoriesForStorefront(),
           fetchActiveProductsPage({ pageSize: PAGE_SIZE }),
           fetchAllActiveProducts().catch(() => []),
         ]);
@@ -68,7 +72,7 @@ export function useCatalog() {
       setSettings(liveSettings);
       setCms(liveCms);
 
-      if (liveCategories.length === 0) {
+      if (liveAllCategories.length === 0 && firstPage.products.length === 0) {
         // Firestore has not been seeded yet — show first-run seed utility & local Erbil sample preview
         setIsFirestoreEmpty(true);
         setBanners(SEED_BANNERS);
@@ -81,7 +85,9 @@ export function useCatalog() {
       } else {
         setIsFirestoreEmpty(false);
         setBanners(liveBanners.length > 0 ? liveBanners : SEED_BANNERS);
-        setCategories(liveCategories);
+        setCategories(
+          resolveStorefrontCategories(liveAllCategories, DEFAULT_15_CATEGORIES)
+        );
         setPagedProducts(firstPage.products);
         setLastDoc(firstPage.lastDoc);
         setHasMore(firstPage.hasMore);

@@ -427,7 +427,7 @@ export async function fetchActiveBanners(): Promise<Banner[]> {
   }
 }
 
-export async function fetchActiveCategories(): Promise<Category[]> {
+export async function fetchAllCategoriesForStorefront(): Promise<Category[]> {
   const path = 'categories';
   try {
     const snap = await getDocs(collection(db, 'categories'));
@@ -440,16 +440,21 @@ export async function fetchActiveCategories(): Promise<Category[]> {
           nameAr: String(d.nameAr || ''),
           nameEn: String(d.nameEn || ''),
           icon: String(d.icon || 'Package'),
+          imageUrl: typeof d.imageUrl === 'string' ? d.imageUrl : '',
           subcategories: Array.isArray(d.subcategories) ? d.subcategories : [],
           sortOrder: Number(d.sortOrder || 0),
           isActive: Boolean(d.isActive),
         };
       })
-      .filter((cat) => cat.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, path);
   }
+}
+
+export async function fetchActiveCategories(): Promise<Category[]> {
+  const all = await fetchAllCategoriesForStorefront();
+  return all.filter((cat) => cat.isActive);
 }
 
 function mapProductDoc(docSnap: QueryDocumentSnapshot<DocumentData>): Product {

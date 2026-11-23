@@ -42,6 +42,8 @@ interface MarketPageProps {
   onIncrement: (product: Product) => void;
   onDecrement: (product: Product) => void;
   onOpenDetail: (product: Product) => void;
+  onOpenCategoriesGrid: () => void;
+  onOpenQuickList: () => void;
 }
 
 export function MarketPage({
@@ -72,6 +74,8 @@ export function MarketPage({
   onIncrement,
   onDecrement,
   onOpenDetail,
+  onOpenCategoriesGrid,
+  onOpenQuickList,
 }: MarketPageProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -148,6 +152,8 @@ export function MarketPage({
         onSelectCategory={onSelectCategory}
         onSelectSubcategory={onSelectSubcategory}
         onSelectSection={onSelectSection}
+        onOpenCategoriesGrid={onOpenCategoriesGrid}
+        onOpenQuickList={onOpenQuickList}
       />
 
       {/* Product Feed States */}

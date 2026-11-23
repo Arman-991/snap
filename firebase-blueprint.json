@@ -106,6 +106,10 @@
           "type": "string",
           "maxLength": 90000
         },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 90000
+        },
         "subcategories": {
           "type": "array"
         },

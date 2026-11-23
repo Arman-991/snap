@@ -21,9 +21,11 @@ import { useCatalog } from './hooks/useCatalog';
 import { useLanguage } from './hooks/useLanguage';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useOrders } from './hooks/useOrders';
+import { CategoriesPage } from './pages/CategoriesPage';
 import { MarketPage } from './pages/MarketPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { QuickShoppingListPage } from './pages/QuickShoppingListPage';
 import type {
   AppView,
   CustomerNotificationItem,
@@ -182,6 +184,12 @@ function CustomerAppShell({
   const browserAlerts = useBrowserOrderAlerts();
 
   const [activeView, setActiveView] = useState<AppView>('market');
+  const [selectedVisualCategoryId, setSelectedVisualCategoryId] = useState<
+    string | null
+  >(null);
+  const [quickListReturnView, setQuickListReturnView] = useState<
+    'market' | 'categories'
+  >('categories');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<OrderRecord | null>(
@@ -233,7 +241,7 @@ function CustomerAppShell({
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [activeView, Boolean(authProfile.profile)]);
+  }, [activeView, selectedVisualCategoryId, Boolean(authProfile.profile)]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -566,10 +574,27 @@ function CustomerAppShell({
     setActiveView('market');
   }, [catalog]);
 
+  const handleSelectCategories = useCallback(() => {
+    setSelectedVisualCategoryId(null);
+    setActiveView('categories');
+  }, []);
+
+  const handleOpenQuickList = useCallback((from: 'market' | 'categories') => {
+    setQuickListReturnView(from);
+    setActiveView('quicklist');
+  }, []);
+
   const handleSelectDeals = useCallback(() => {
     catalog.setSelectedSection('deals');
     setActiveView('market');
   }, [catalog]);
+
+  const handleBottomNavSelect = useCallback((view: AppView) => {
+    if (view === 'categories') {
+      setSelectedVisualCategoryId(null);
+    }
+    setActiveView(view);
+  }, []);
 
   if (authProfile.profileLoading && !authProfile.profile && !bypassOnboarding) {
     return (
@@ -611,6 +636,7 @@ function CustomerAppShell({
         onSelectNotification={handleSelectNotification}
         onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
         onSelectMarket={handleSelectMarket}
+        onSelectCategories={handleSelectCategories}
         onSelectDeals={handleSelectDeals}
         onSelectOrders={() => setActiveView('orders')}
         onSelectProfile={() => setActiveView('profile')}
@@ -680,6 +706,39 @@ function CustomerAppShell({
             onIncrement={cart.increment}
             onDecrement={cart.decrement}
             onOpenDetail={setSelectedProduct}
+            onOpenCategoriesGrid={handleSelectCategories}
+            onOpenQuickList={() => handleOpenQuickList('market')}
+          />
+        )}
+
+        {activeView === 'categories' && (
+          <CategoriesPage
+            t={t}
+            language={language}
+            categories={catalog.categories}
+            allProducts={catalog.allActiveProducts}
+            selectedCategoryId={selectedVisualCategoryId}
+            getQuantity={cart.getQuantity}
+            onSelectCategory={setSelectedVisualCategoryId}
+            onOpenQuickList={() => handleOpenQuickList('categories')}
+            onIncrement={cart.increment}
+            onDecrement={cart.decrement}
+            onOpenDetail={setSelectedProduct}
+            onOpenCart={handleOpenCart}
+          />
+        )}
+
+        {activeView === 'quicklist' && (
+          <QuickShoppingListPage
+            t={t}
+            language={language}
+            allProducts={catalog.allActiveProducts}
+            getQuantity={cart.getQuantity}
+            onBack={() => setActiveView(quickListReturnView)}
+            onIncrement={cart.increment}
+            onDecrement={cart.decrement}
+            onOpenDetail={setSelectedProduct}
+            onOpenCart={handleOpenCart}
           />
         )}
 
@@ -735,7 +794,7 @@ function CustomerAppShell({
       <MobileBottomNav
         t={t}
         activeView={activeView}
-        onSelectView={setActiveView}
+        onSelectView={handleBottomNavSelect}
         onOpenCart={handleOpenCart}
       />
 
