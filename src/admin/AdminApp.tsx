@@ -671,8 +671,10 @@ export default function AdminApp() {
           {activeTab === 'settings' && adminUser.role === 'owner' && (
             <SettingsTab
               t={t}
+              language={language}
               actor={actor}
               settings={settings}
+              users={users}
               onRefresh={loadCatalogAndSettings}
             />
           )}

@@ -331,6 +331,18 @@
         "cart": {
           "type": "array"
         },
+        "onesignalExternalId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "onesignalSubscriptionId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "pushPlatform": {
+          "type": "string",
+          "maxLength": 40
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -571,9 +583,36 @@
         }
       },
       "required": ["actorUid", "action", "targetId", "details", "createdAt"]
+    },
+    "OneSignalPushConfig": {
+      "title": "OneSignalPushConfig",
+      "description": "Admin-only OneSignal credentials and auto-push toggle for Median native Android APK push notifications (stored at adminConfig/onesignal).",
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "restApiKey": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["appId", "restApiKey", "enabled", "updatedAt"]
     }
   },
   "firestore": {
+    "/adminConfig/{docId}": {
+      "schema": { "$ref": "#/entities/OneSignalPushConfig" },
+      "description": "Admin-only integration configuration (document ID: onesignal). Readable by owner and staff, writable by owner only."
+    },
     "/settings/{settingId}": {
       "schema": { "$ref": "#/entities/StoreSettings" },
       "description": "Storefront global configuration (document ID: store)."

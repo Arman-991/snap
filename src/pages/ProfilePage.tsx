@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import {
   AlertCircle,
+  BellRing,
   CheckCircle2,
   ExternalLink,
   Globe,
@@ -14,6 +15,7 @@ import { LifetimeSavingsCard } from '../components/LifetimeSavingsCard';
 import { OrderAlertsToggle } from '../components/OrderAlertsToggle';
 import { PWAInstallButton } from '../components/PWAInstallButton';
 import type { BrowserAlertStatus } from '../hooks/useBrowserOrderAlerts';
+import { isMedianApp, syncMedianPushWithUser } from '../lib/medianPush';
 import type { TranslationDictionary } from '../i18n/translations';
 import type {
   ContactLinkItem,
@@ -77,6 +79,20 @@ export function ProfilePage({
   const [errors, setErrors] = useState<ProfileValidationErrors>({});
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [medianBusy, setMedianBusy] = useState(false);
+  const [medianEnabledNotice, setMedianEnabledNotice] = useState(false);
+  const runningInMedian = isMedianApp();
+
+  const handleEnableMedianAlerts = async () => {
+    setMedianBusy(true);
+    setMedianEnabledNotice(false);
+    try {
+      await syncMedianPushWithUser(uid, Boolean(profile));
+      setMedianEnabledNotice(true);
+    } finally {
+      setMedianBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -146,11 +162,59 @@ export function ProfilePage({
           </h1>
           <p className="mt-0.5 text-xs text-gray-500">{t.profile.subtitle}</p>
         </div>
-        <OrderAlertsToggle
-          status={browserAlertStatus}
-          t={t}
-          onToggle={onToggleBrowserAlerts}
-        />
+        {runningInMedian ? (
+          <div className="rounded-2xl border border-[#CBE7D5] bg-[#F2FBF5] p-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-primary)] text-[var(--brand-primary-fg)]">
+                  <BellRing className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-[#141A15]">
+                    {t.retention.medianEnableAlertsLabel}
+                  </p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-[#4E5750]">
+                    {t.retention.medianAlertsSubtitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-testid="median-enable-alerts-btn"
+                disabled={medianBusy}
+                onClick={() => void handleEnableMedianAlerts()}
+                className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-4 text-sm font-semibold text-[var(--brand-primary-fg)] transition-transform active:scale-95 disabled:opacity-60"
+              >
+                {medianBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden="true" />
+                ) : (
+                  <BellRing className="h-4 w-4 shrink-0" aria-hidden="true" />
+                )}
+                <span>
+                  {medianBusy
+                    ? t.retention.medianAlertsEnabling
+                    : t.retention.medianEnableAlertsLabel}
+                </span>
+              </button>
+              {medianEnabledNotice && (
+                <p
+                  role="status"
+                  data-testid="median-alerts-synced-status"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#115532]"
+                >
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{t.retention.medianAlertsSynced}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <OrderAlertsToggle
+            status={browserAlertStatus}
+            t={t}
+            onToggle={onToggleBrowserAlerts}
+          />
+        )}
       </div>
 
       <LifetimeSavingsCard

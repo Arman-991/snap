@@ -204,6 +204,10 @@ export interface TranslationDictionary {
     alertsBlockedHint: string;
     alertsUnsupportedHint: string;
     alertsIosInstallHint: string;
+    medianEnableAlertsLabel: string;
+    medianAlertsEnabling: string;
+    medianAlertsSynced: string;
+    medianAlertsSubtitle: string;
   };
   categoriesPage: {
     title: string;
@@ -482,6 +486,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       alertsUnsupportedHint: 'وێبگەڕەکەت پشتگیری ئاگادارکردنەوەی ڕاستەوخۆ ناکات.',
       alertsIosInstallHint:
         'لەسەر ئایفۆن، کرتە لە Share ← Add to Home Screen بکە بۆ وەرگرتنی ئاگادارکردنەوە.',
+      medianEnableAlertsLabel: 'چالاککردنی ئاگادارکردنەوەی مۆبایل',
+      medianAlertsEnabling: 'چالاککردن…',
+      medianAlertsSynced: 'ئاگادارکردنەوەی مۆبایل چالاک کرا!',
+      medianAlertsSubtitle: 'ئاگادارکردنەوەی ڕاستەوخۆ وەربگرە کاتێک داواکارییەکەت پەسەند دەکرێت یان دەگاتە دەستت.',
     },
     categoriesPage: {
       title: 'پۆلەکان',
@@ -746,6 +754,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       alertsUnsupportedHint: 'متصفحك لا يدعم إشعارات المتصفح.',
       alertsIosInstallHint:
         'على الآيفون، اضغط مشاركة (Share) ← إضافة إلى الشاشة الرئيسية لتصلك التنبيهات.',
+      medianEnableAlertsLabel: 'تفعيل تنبيهات الموبايل',
+      medianAlertsEnabling: 'جاري التفعيل…',
+      medianAlertsSynced: 'تم تفعيل تنبيهات الموبايل بنجاح!',
+      medianAlertsSubtitle: 'استلم إشعارات فورية على شاشة القفل عند تأكيد طلبك أو توصيله.',
     },
     categoriesPage: {
       title: 'الأقسام',
@@ -1010,6 +1022,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       alertsUnsupportedHint: 'Browser alerts are not supported on this device.',
       alertsIosInstallHint:
         'On iPhone, tap Share → Add to Home Screen to receive alerts.',
+      medianEnableAlertsLabel: 'Enable Mobile Alerts',
+      medianAlertsEnabling: 'Enabling…',
+      medianAlertsSynced: 'Mobile alerts enabled on this device!',
+      medianAlertsSubtitle: 'Receive lock-screen alerts when your order is confirmed or delivered.',
     },
     categoriesPage: {
       title: 'Categories',

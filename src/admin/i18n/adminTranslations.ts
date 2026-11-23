@@ -73,6 +73,9 @@ export interface AdminDictionary {
     notePlaceholder: string;
     addNote: string;
     noNotes: string;
+    pushSentToast: string;
+    pushSkippedToast: string;
+    pushFailedToast: string;
   };
   products: {
     title: string;
@@ -168,6 +171,25 @@ export interface AdminDictionary {
     lowBandwidthDesc: string;
     lowBandwidthOn: string;
     lowBandwidthOff: string;
+    mobilePushTitle: string;
+    mobilePushSubtitle: string;
+    oneSignalAppIdLabel: string;
+    oneSignalApiKeyLabel: string;
+    oneSignalAutoPushLabel: string;
+    oneSignalAutoPushOn: string;
+    oneSignalAutoPushOff: string;
+    oneSignalSaveBtn: string;
+    oneSignalSavedToast: string;
+    oneSignalTestTitle: string;
+    oneSignalTestPlaceholder: string;
+    oneSignalTestHint: string;
+    oneSignalTestBtn: string;
+    oneSignalTestSending: string;
+    oneSignalTestSent: string;
+    oneSignalTestTargetError: string;
+    oneSignalNotConfiguredError: string;
+    showKey: string;
+    hideKey: string;
   };
   reports: {
     title: string;
@@ -287,6 +309,9 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       notePlaceholder: 'Add an internal call or delivery note…',
       addNote: 'Add note',
       noNotes: 'No internal notes yet.',
+      pushSentToast: 'Mobile push sent to customer ({orderNumber}).',
+      pushSkippedToast: 'Status updated (Mobile push skipped — not configured or disabled).',
+      pushFailedToast: 'Status updated, but mobile push failed: {reason}',
     },
     products: {
       title: 'Products Management',
@@ -382,6 +407,25 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       lowBandwidthDesc: 'When ON, category buttons render instant 0ms inline SVG illustrations without downloading any category photos — ideal for slow mobile data.',
       lowBandwidthOn: 'ON (Instant SVGs Only)',
       lowBandwidthOff: 'OFF (SVGs + Fast Photos)',
+      mobilePushTitle: 'Mobile Push (OneSignal · Median APK)',
+      mobilePushSubtitle: 'Send real Android lock-screen notifications when an order is marked Confirmed or Delivered. Stored privately in adminConfig/onesignal.',
+      oneSignalAppIdLabel: 'OneSignal App ID',
+      oneSignalApiKeyLabel: 'OneSignal REST API Key',
+      oneSignalAutoPushLabel: 'Auto-Push on "Confirmed" & "Delivered"',
+      oneSignalAutoPushOn: 'ON (Auto-Push Active)',
+      oneSignalAutoPushOff: 'OFF (Paused)',
+      oneSignalSaveBtn: 'Save Mobile Push Settings',
+      oneSignalSavedToast: 'Mobile Push settings saved securely.',
+      oneSignalTestTitle: 'Send Test Notification',
+      oneSignalTestPlaceholder: 'Customer phone (e.g. 0750 123 4567) or Firebase UID…',
+      oneSignalTestHint: 'Targets the customer device registered via Median APK External User ID.',
+      oneSignalTestBtn: 'Send Test Notification',
+      oneSignalTestSending: 'Sending…',
+      oneSignalTestSent: 'Test push notification sent successfully!',
+      oneSignalTestTargetError: 'Enter a valid Firebase UID or registered customer phone number.',
+      oneSignalNotConfiguredError: 'Please enter both OneSignal App ID and REST API Key first.',
+      showKey: 'Show key',
+      hideKey: 'Hide key',
     },
     reports: {
       title: 'Reports & Analytics',
@@ -499,6 +543,9 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       notePlaceholder: 'تێبینییەکی ناوخۆیی بنووسە…',
       addNote: 'زیادکردنی تێبینی',
       noNotes: 'هێشتا تێبینی ناوخۆیی نییە.',
+      pushSentToast: 'ئاگادارکردنەوەی مۆبایل بۆ کڕیار نێردرا ({orderNumber}).',
+      pushSkippedToast: 'دۆخ نوێکرایەوە (ئاگادارکردنەوەی مۆبایل ناچالاکە یان ڕێکنەخراوە).',
+      pushFailedToast: 'دۆخ نوێکرایەوە، بەڵام ناردنی ئاگادارکردنەوە سەرکەوتوو نەبوو: {reason}',
     },
     products: {
       title: 'بەڕێوەبردنی بەرهەمەکان',
@@ -594,6 +641,25 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       lowBandwidthDesc: 'کاتێک چالاکە، دوگمەی پۆلەکان تەنها وێنەی SVGی خێرا پیشان دەدەن بەبێ دابەزاندنی وێنەی دەرەکی — زۆر گونجاوە بۆ هێڵی لاواز.',
       lowBandwidthOn: 'چالاک (تەنها SVG)',
       lowBandwidthOff: 'ناچالاک (SVG + وێنەی خێرا)',
+      mobilePushTitle: 'ئاگادارکردنەوەی مۆبایل (OneSignal · Median APK)',
+      mobilePushSubtitle: 'ناردنی ئاگادارکردنەوەی ڕاستەقینەی شاشەی قفڵ بۆ کڕیارانی APK کاتێک داواکاری پەسەند دەکرێت یان دەگەیەندرێت.',
+      oneSignalAppIdLabel: 'ناسنامەی OneSignal App ID',
+      oneSignalApiKeyLabel: 'کلیلی OneSignal REST API Key',
+      oneSignalAutoPushLabel: 'ناردنی خۆکار لەسەر «دڵنیاکرایەوە» و «گەیەندرا»',
+      oneSignalAutoPushOn: 'چالاکە',
+      oneSignalAutoPushOff: 'ڕاگیراوە',
+      oneSignalSaveBtn: 'پاشەکەوتکردنی ڕێکخستنی OneSignal',
+      oneSignalSavedToast: 'ڕێکخستنەکانی ئاگادارکردنەوەی مۆبایل پاشەکەوت کران.',
+      oneSignalTestTitle: 'ناردنی ئاگادارکردنەوەی تاقیکاری',
+      oneSignalTestPlaceholder: 'ژمارەی مۆبایلی کڕیار (0750…) یان Firebase UID…',
+      oneSignalTestHint: 'ئاگادارکردنەوەکە دەنێرێت بۆ ئامێری تۆمارکراوی ئەو کڕیارە لە Median APK.',
+      oneSignalTestBtn: 'ناردنی تاقیکاری',
+      oneSignalTestSending: 'ناردن…',
+      oneSignalTestSent: 'ئاگادارکردنەوەی تاقیکاری بە سەرکەوتوویی نێردرا!',
+      oneSignalTestTargetError: 'تکایە Firebase UID یان ژمارە مۆبایلی کڕیارێکی تۆمارکراو بنووسە.',
+      oneSignalNotConfiguredError: 'تکایە سەرەتا OneSignal App ID و REST API Key بنووسە.',
+      showKey: 'پیشاندان',
+      hideKey: 'شاردنەوە',
     },
     reports: {
       title: 'ڕاپۆرت و ئامارەکان',
@@ -711,6 +777,9 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       notePlaceholder: 'أضف ملاحظة داخلية للمكالمة أو التوصيل…',
       addNote: 'إضافة ملاحظة',
       noNotes: 'لا توجد ملاحظات داخلية بعد.',
+      pushSentToast: 'تم إرسال إشعار الموبايل للعميل ({orderNumber}).',
+      pushSkippedToast: 'تم تحديث الحالة (تم تخطي إشعار الموبايل — غير مفعّل أو غير مضبوط).',
+      pushFailedToast: 'تم تحديث الحالة، لكن تعذر إرسال الإشعار: {reason}',
     },
     products: {
       title: 'إدارة المنتجات',
@@ -806,6 +875,25 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       lowBandwidthDesc: 'عند التفعيل، تعرض أزرار الأقسام رسومات SVG فورية خلال 0ms دون تحميل صور الأقسام — مثالي لشبكات الموبايل البطيئة.',
       lowBandwidthOn: 'مفعّل (SVG فوري فقط)',
       lowBandwidthOff: 'متوقف (SVG + صور سريعة)',
+      mobilePushTitle: 'إشعارات الموبايل (OneSignal · Median APK)',
+      mobilePushSubtitle: 'أرسل إشعارات حقيقية لشاشة قفل أندرويد عند تأكيد الطلب أو توصيله. تُحفظ البيانات بأمان في adminConfig/onesignal.',
+      oneSignalAppIdLabel: 'معرّف OneSignal App ID',
+      oneSignalApiKeyLabel: 'مفتاح OneSignal REST API Key',
+      oneSignalAutoPushLabel: 'الإرسال التلقائي عند «مؤكد» و«تم التوصيل»',
+      oneSignalAutoPushOn: 'مفعّل',
+      oneSignalAutoPushOff: 'متوقف',
+      oneSignalSaveBtn: 'حفظ إعدادات OneSignal',
+      oneSignalSavedToast: 'تم حفظ إعدادات إشعارات الموبايل بأمان.',
+      oneSignalTestTitle: 'إرسال إشعار تجريبي',
+      oneSignalTestPlaceholder: 'رقم هاتف العميل (0750…) أو Firebase UID…',
+      oneSignalTestHint: 'يستهدف جهاز العميل المسجّل عبر Median APK باستخدام External User ID.',
+      oneSignalTestBtn: 'إرسال إشعار تجريبي',
+      oneSignalTestSending: 'جاري الإرسال…',
+      oneSignalTestSent: 'تم إرسال الإشعار التجريبي بنجاح!',
+      oneSignalTestTargetError: 'أدخل Firebase UID صحيحاً أو رقم هاتف عميل مسجّل.',
+      oneSignalNotConfiguredError: 'يرجى إدخال OneSignal App ID و REST API Key أولاً.',
+      showKey: 'إظهار',
+      hideKey: 'إخفاء',
     },
     reports: {
       title: 'التقارير والتحليلات',

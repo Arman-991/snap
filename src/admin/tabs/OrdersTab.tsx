@@ -34,6 +34,7 @@ import {
   updateOrderStatusAdmin,
   type AdminActor,
 } from '../services/adminFirestoreService';
+import { triggerOrderStatusPushAdmin } from '../../services/oneSignalPushService';
 
 interface OrdersTabProps {
   t: AdminDictionary;
@@ -89,6 +90,10 @@ export function OrdersTab({
   const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [newOrderToast, setNewOrderToast] = useState<string | null>(null);
+  const [pushToast, setPushToast] = useState<{
+    tone: 'success' | 'info' | 'error';
+    text: string;
+  } | null>(null);
 
   // Admin notes for selected order
   const [notes, setNotes] = useState<OrderAdminNote[]>([]);
@@ -129,6 +134,12 @@ export function OrdersTab({
     const timer = window.setTimeout(() => setNewOrderToast(null), 6000);
     return () => window.clearTimeout(timer);
   }, [newOrderToast]);
+
+  useEffect(() => {
+    if (!pushToast) return;
+    const timer = window.setTimeout(() => setPushToast(null), 6500);
+    return () => window.clearTimeout(timer);
+  }, [pushToast]);
 
   const selectedOrder = useMemo(
     () => orders.find((o) => o.id === selectedOrderId) ?? null,
@@ -198,7 +209,43 @@ export function OrdersTab({
     setPendingStatus(nextStatus);
     setActionError(null);
     try {
-      await updateOrderStatusAdmin(actor, selectedOrder, nextStatus);
+      const orderSnapshot = selectedOrder;
+      await updateOrderStatusAdmin(actor, orderSnapshot, nextStatus);
+
+      if (nextStatus === 'Confirmed' || nextStatus === 'Delivered') {
+        void triggerOrderStatusPushAdmin({
+          order: orderSnapshot,
+          nextStatus,
+          allOrders: orders,
+          fallbackLanguage: language,
+        }).then((pushResult) => {
+          if (pushResult.status === 'sent') {
+            setPushToast({
+              tone: 'success',
+              text: t.orders.pushSentToast.replace(
+                '{orderNumber}',
+                orderSnapshot.orderNumber
+              ),
+            });
+          } else if (
+            pushResult.status === 'not_configured' ||
+            pushResult.status === 'disabled'
+          ) {
+            setPushToast({
+              tone: 'info',
+              text: t.orders.pushSkippedToast,
+            });
+          } else {
+            setPushToast({
+              tone: 'error',
+              text: t.orders.pushFailedToast.replace(
+                '{reason}',
+                pushResult.message || 'API error'
+              ),
+            });
+          }
+        });
+      }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Status update failed');
     } finally {
@@ -295,6 +342,34 @@ export function OrdersTab({
             onClick={() => setNewOrderToast(null)}
             aria-label={t.common.close}
             className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-white/10"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {/* Non-blocking Mobile Push Status Toast */}
+      {pushToast && (
+        <div
+          role="status"
+          data-testid="admin-push-toast"
+          className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs font-semibold sm:text-sm ${
+            pushToast.tone === 'success'
+              ? 'border-[#BCE0CA] bg-[#EFF6F2] text-[#115532]'
+              : pushToast.tone === 'error'
+                ? 'border-[#F2C3C1] bg-[#FDF1F0] text-[#B42318]'
+                : 'border-[#D4DAD2] bg-[#FAFBF9] text-[#4E5750]'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Bell className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{pushToast.text}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setPushToast(null)}
+            aria-label={t.common.close}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:bg-black/5"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -588,6 +663,20 @@ export function OrdersTab({
                 {actionError && (
                   <p className="rounded-lg bg-[#FEE2E2] px-3 py-2 text-xs font-medium text-[#991B1B]">
                     {actionError}
+                  </p>
+                )}
+                {pushToast && (
+                  <p
+                    role="status"
+                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${
+                      pushToast.tone === 'success'
+                        ? 'border-[#BCE0CA] bg-[#EFF6F2] text-[#115532]'
+                        : pushToast.tone === 'error'
+                          ? 'border-[#F2C3C1] bg-[#FDF1F0] text-[#B42318]'
+                          : 'border-[#D4DAD2] bg-[#FAFBF9] text-[#4E5750]'
+                    }`}
+                  >
+                    {pushToast.text}
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2">

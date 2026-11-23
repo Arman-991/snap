@@ -30,6 +30,7 @@ import { MarketPage } from './pages/MarketPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { QuickShoppingListPage } from './pages/QuickShoppingListPage';
+import { syncMedianPushWithUser } from './lib/medianPush';
 import type {
   AppView,
   CustomerNotificationItem,
@@ -187,7 +188,15 @@ function CustomerAppShell({
   const cart = useCartContext();
   const browserAlerts = useBrowserOrderAlerts();
 
-  const [activeView, setActiveView] = useState<AppView>('market');
+  const [activeView, setActiveView] = useState<AppView>(() => {
+    if (typeof window !== 'undefined') {
+      const viewParam = new URLSearchParams(window.location.search).get('view');
+      if (viewParam === 'orders') return 'orders';
+      if (viewParam === 'categories') return 'categories';
+      if (viewParam === 'profile') return 'profile';
+    }
+    return 'market';
+  });
   const [selectedVisualCategoryId, setSelectedVisualCategoryId] = useState<
     string | null
   >(null);
@@ -264,6 +273,19 @@ function CustomerAppShell({
     const timer = window.setTimeout(() => setToastMessage(null), 4500);
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
+
+  // Median.co native APK push integration (safely no-ops in regular web browsers)
+  const medianSyncedUidRef = useRef<string | null>(null);
+  useEffect(() => {
+    const uid = authProfile.user?.uid;
+    if (!uid) return;
+    const hasProfile = Boolean(authProfile.profile);
+    const syncKey = `${uid}:${hasProfile ? 'profile' : 'anon'}`;
+    if (medianSyncedUidRef.current === syncKey) return;
+    medianSyncedUidRef.current = syncKey;
+
+    void syncMedianPushWithUser(uid, hasProfile).catch(() => undefined);
+  }, [authProfile.user?.uid, authProfile.profile]);
 
   // Customer-side real-time orders listener watcher:
   // 1) Clears cart directly from customer session once per order ID when order is New, Confirmed, or Delivered

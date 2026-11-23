@@ -170,8 +170,18 @@ export interface UserProfile {
   gps: GpsCoordinates | null;
   language: Language;
   cart: CartItem[];
+  onesignalExternalId?: string;
+  onesignalSubscriptionId?: string | null;
+  pushPlatform?: string;
   createdAt?: string | number | null;
   updatedAt?: string | number | null;
+}
+
+export interface OneSignalPushConfig {
+  appId: string;
+  restApiKey: string;
+  enabled: boolean;
+  updatedAtMs?: number;
 }
 
 export interface ProfileFormInput {

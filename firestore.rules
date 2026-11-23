@@ -217,7 +217,9 @@ service cloud.firestore {
         ]) &&
         data.keys().hasOnly([
           'uid', 'fullName', 'phoneDisplay', 'phoneNormalized', 'addressText',
-          'buildingNotes', 'gps', 'language', 'cart', 'createdAt', 'updatedAt'
+          'buildingNotes', 'gps', 'language', 'cart',
+          'onesignalExternalId', 'onesignalSubscriptionId', 'pushPlatform',
+          'createdAt', 'updatedAt'
         ]) &&
         data.uid == uid &&
         data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
@@ -234,6 +236,9 @@ service cloud.firestore {
           data.cart[0].productId is string && data.cart[0].productId.size() <= 80 &&
           data.cart[0].quantity is number && data.cart[0].quantity >= 1 && data.cart[0].quantity <= 50
         )) &&
+        (!('onesignalExternalId' in data) || (data.onesignalExternalId is string && data.onesignalExternalId.size() <= 128)) &&
+        (!('onesignalSubscriptionId' in data) || (data.onesignalSubscriptionId == null || (data.onesignalSubscriptionId is string && data.onesignalSubscriptionId.size() <= 128))) &&
+        (!('pushPlatform' in data) || (data.pushPlatform is string && data.pushPlatform.size() <= 40)) &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -332,7 +337,27 @@ service cloud.firestore {
         data.createdAt is timestamp;
     }
 
+    function isValidOneSignalConfig(data) {
+      return data.keys().hasAll(['appId', 'restApiKey', 'enabled', 'updatedAt']) &&
+        data.keys().hasOnly(['appId', 'restApiKey', 'enabled', 'updatedAt']) &&
+        data.appId is string && data.appId.size() <= 128 &&
+        data.restApiKey is string && data.restApiKey.size() <= 256 &&
+        data.enabled is bool &&
+        data.updatedAt is timestamp;
+    }
+
     // --- Collection Rules ---
+
+    // adminConfig/onesignal: owner & staff get (to trigger push on status update), owner-only write, never public
+    match /adminConfig/{docId} {
+      allow get: if isValidId(docId) && docId == 'onesignal' && isAdmin();
+      allow list: if false;
+      allow create, update: if isValidId(docId) && docId == 'onesignal' &&
+        isValidOneSignalConfig(incoming()) &&
+        incoming().updatedAt == request.time &&
+        isOwner();
+      allow delete: if false;
+    }
 
     // settings/store: public read, owner-only write
     match /settings/{settingId} {
@@ -389,9 +414,9 @@ service cloud.firestore {
       allow delete: if isValidId(bannerId) && isOwner();
     }
 
-    // users: private PII; self or owner read/write; owner & staff may clear cart to [] on order confirm/deliver
+    // users: private PII; self or admin single-doc get (for localized push); owner-only list; self updates own profile + push mapping; owner & staff may clear cart to [] on order confirm/deliver
     match /users/{uid} {
-      allow get: if isValidId(uid) && (isUserSelf(uid) || isOwner());
+      allow get: if isValidId(uid) && (isUserSelf(uid) || isAdmin());
       allow list: if isOwner();
       allow create: if isValidId(uid) &&
         isUserSelf(uid) &&
@@ -407,7 +432,9 @@ service cloud.firestore {
             isUserSelf(uid) &&
             incoming().diff(existing()).affectedKeys().hasOnly([
               'fullName', 'phoneDisplay', 'phoneNormalized', 'addressText',
-              'buildingNotes', 'gps', 'language', 'cart', 'updatedAt'
+              'buildingNotes', 'gps', 'language', 'cart',
+              'onesignalExternalId', 'onesignalSubscriptionId', 'pushPlatform',
+              'updatedAt'
             ])
           ) || (
             isAdmin() &&
