@@ -4,8 +4,9 @@
  */
 export async function compressImageFileToDataUrl(
   file: File,
-  maxDim = 400,
-  maxBytes = 45_000
+  maxDim = 360,
+  maxBytes = 30_000,
+  initialQuality = 0.72
 ): Promise<string> {
   const objectUrl = URL.createObjectURL(file);
   try {
@@ -39,7 +40,9 @@ export async function compressImageFileToDataUrl(
     ctx.drawImage(img, 0, 0, width, height);
 
     const mimeCandidates = ['image/webp', 'image/jpeg'];
-    const qualities = [0.82, 0.72, 0.6, 0.48, 0.36];
+    const qualities = Array.from(
+      new Set([initialQuality, 0.72, 0.62, 0.52, 0.42, 0.34])
+    ).filter((q) => q <= initialQuality);
 
     let bestResult = '';
     for (const mime of mimeCandidates) {

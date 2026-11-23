@@ -12,9 +12,9 @@ import { CategoryPhotoGrid } from './CategoryPhotoGrid';
 interface CatalogToolbarProps {
   t: TranslationDictionary;
   language: Language;
-  onChangeLanguage: (lang: Language) => void;
   categories: Category[];
   homeSections?: HomeSectionConfig[];
+  lowBandwidthMode?: boolean;
   selectedCategory: Category | null;
   selectedCategoryId: string;
   selectedSubcategoryId: string;
@@ -29,7 +29,6 @@ interface CatalogToolbarProps {
   onOpenQuickList?: () => void;
 }
 
-const LANGUAGES: Language[] = ['ku', 'ar', 'en'];
 const DEFAULT_SECTIONS: ProductSection[] = [
   'deals',
   'popular',
@@ -40,9 +39,9 @@ const DEFAULT_SECTIONS: ProductSection[] = [
 export function CatalogToolbar({
   t,
   language,
-  onChangeLanguage,
   categories,
   homeSections,
+  lowBandwidthMode = false,
   selectedCategory,
   selectedCategoryId,
   selectedSubcategoryId,
@@ -69,122 +68,90 @@ export function CatalogToolbar({
   return (
     <section
       aria-label="Catalog search and filters"
-      className="space-y-3 border-b border-[#E5E7E4] pb-5"
+      className="space-y-3 border-b border-gray-200/80 pb-4"
     >
-      {/* Row 1: Search Input + Language Switcher */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1">
-          <Search
-            className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B756D]"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t.storefront.searchPlaceholder}
-            aria-label={t.storefront.searchPlaceholder}
-            className="min-h-[48px] w-full rounded-xl border border-[#D4DAD2] bg-white ps-10 pe-12 text-sm text-[#141A15] placeholder:text-[#78827A] focus:border-[#15663C] focus:outline-none"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchChange('')}
-              aria-label={t.storefront.clearSearch}
-              className="absolute end-0 top-0 flex h-12 w-12 items-center justify-center rounded-xl text-[#566058] hover:text-[#141A15]"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
-        </div>
-
-        <div
-          role="group"
-          aria-label={t.profile.languageSection}
-          className="inline-flex shrink-0 items-center rounded-xl border border-[#E5E7E4] bg-white p-1"
-        >
-          {LANGUAGES.map((code) => {
-            const active = language === code;
-            return (
-              <button
-                key={code}
-                type="button"
-                onClick={() => onChangeLanguage(code)}
-                aria-pressed={active}
-                className={`min-h-[48px] flex-1 rounded-lg px-3 text-xs font-semibold transition-colors whitespace-nowrap sm:flex-none sm:text-sm ${
-                  active
-                    ? 'bg-[var(--brand-primary)] text-[var(--brand-primary-fg)]'
-                    : 'text-[#4E5750] hover:bg-[#F3F5F2] hover:text-[#141A15]'
-                }`}
-              >
-                {t.languageNames[code]}
-              </button>
-            );
-          })}
-        </div>
+      {/* Row 1: 100% Full-Width Search Input (Language moved cleanly to sticky Header) */}
+      <div className="relative w-full">
+        <Search
+          className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+          aria-hidden="true"
+        />
+        <input
+          type="search"
+          data-testid="home-search-input"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={t.storefront.searchPlaceholder}
+          aria-label={t.storefront.searchPlaceholder}
+          className="h-11 w-full rounded-2xl border border-gray-200 bg-white ps-10 pe-11 text-sm text-[#141A15] shadow-2xs placeholder:text-gray-400 focus:border-green-600 focus:outline-none"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => onSearchChange('')}
+            aria-label={t.storefront.clearSearch}
+            className="absolute end-0 top-0 flex h-11 w-11 items-center justify-center rounded-2xl text-gray-500 hover:text-gray-900 active:scale-95"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
 
-      {/* Row 1b: Compact Quick Shopping List Entry under Search Bar */}
+      {/* Row 2: Compact Quick Shopping List Entry */}
       {onOpenQuickList && (
         <button
           type="button"
           data-testid="home-quicklist-btn"
           onClick={onOpenQuickList}
-          className="flex min-h-[46px] w-full items-center justify-between gap-2.5 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] px-3.5 py-2 text-start transition-colors hover:border-[#86EFAC] hover:bg-[#DCFCE7]/70 active:scale-[0.99]"
+          className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-2xl border border-green-200 bg-green-50/80 px-3.5 py-2 text-start transition-transform duration-100 hover:bg-green-100/70 active:scale-[0.98]"
         >
-          <span className="flex min-w-0 items-center gap-2.5">
+          <span className="flex min-w-0 items-center gap-2">
             <ClipboardCheck
-              className="h-4 w-4 shrink-0 text-[#16A34A]"
+              className="h-4 w-4 shrink-0 text-green-600"
               aria-hidden="true"
             />
-            <span className="line-clamp-2 font-display text-xs font-bold leading-snug text-[#14532D] sm:text-sm">
+            <span className="line-clamp-2 font-display text-xs font-bold leading-snug text-green-900">
               {t.quickList.bannerText}
             </span>
           </span>
           <ChevronRight
-            className="h-4 w-4 shrink-0 text-[#15803D] rtl:rotate-180"
+            className="h-4 w-4 shrink-0 text-green-700 rtl:rotate-180"
             aria-hidden="true"
           />
         </button>
       )}
 
-      {/* Row 2: Section Filter Tabs */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {orderedSections.map((sec) => {
-            const active = selectedSection === sec;
-            return (
-              <button
-                key={sec}
-                type="button"
-                onClick={() => onSelectSection(sec)}
-                aria-pressed={active}
-                className={`min-h-[48px] shrink-0 rounded-xl px-4 text-xs font-semibold transition-colors whitespace-nowrap sm:text-sm ${
-                  active
-                    ? 'bg-[#141A15] text-white'
-                    : 'border border-[#E5E7E4] bg-white text-[#4E5750] hover:border-[#C5CEC3] hover:text-[#141A15]'
-                }`}
-              >
-                {t.storefront.sections[sec]}
-              </button>
-            );
-          })}
-        </div>
-
-        <span className="hidden shrink-0 text-xs font-medium text-[#616B63] tabular-nums md:inline">
-          {visibleCount} {t.storefront.itemsCount}
-        </span>
+      {/* Row 3: Smooth Horizontal Scrollable Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        {orderedSections.map((sec) => {
+          const active = selectedSection === sec;
+          return (
+            <button
+              key={sec}
+              type="button"
+              onClick={() => onSelectSection(sec)}
+              aria-pressed={active}
+              className={`min-h-[38px] shrink-0 rounded-full px-3.5 text-xs font-bold transition-transform duration-100 active:scale-95 whitespace-nowrap ${
+                active
+                  ? 'bg-[#141A15] text-white shadow-2xs'
+                  : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'
+              }`}
+            >
+              {t.storefront.sections[sec]}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Row 3: Shop by Categories Visual Studio Photo Grid */}
+      {/* Row 4: Shop by Categories Visual Full-Photo Grid */}
       {categories.length > 0 && (
         <div
           data-testid="home-shop-by-categories"
-          className="space-y-3 pt-1"
+          className="space-y-2.5 pt-1"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-base font-extrabold text-[#141A15] sm:text-lg">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h2 className="truncate font-display text-base font-extrabold text-[#141A15]">
                 {t.categoriesPage.shopByCategoriesTitle}
               </h2>
 
@@ -193,10 +160,10 @@ export function CatalogToolbar({
                   type="button"
                   data-testid="home-show-all-items-btn"
                   onClick={() => onSelectCategory('all')}
-                  className="inline-flex min-h-[36px] items-center gap-1 rounded-lg bg-[#EFF6F2] px-2.5 text-xs font-bold text-[#15663C] ring-1 ring-inset ring-[#15663C]/30 transition-colors hover:bg-[#DCFCE7] active:scale-95"
+                  className="inline-flex min-h-[30px] items-center gap-1 rounded-full bg-green-50 px-2.5 text-[11px] font-bold text-green-700 ring-1 ring-inset ring-green-600/30 transition-transform duration-100 hover:bg-green-100 active:scale-95"
                 >
                   <span>{t.categoriesPage.showAllItems}</span>
-                  <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <X className="h-3 w-3 shrink-0" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -206,11 +173,11 @@ export function CatalogToolbar({
                 type="button"
                 data-testid="home-all-categories-shortcut"
                 onClick={onOpenCategoriesGrid}
-                className="inline-flex min-h-[40px] shrink-0 items-center gap-1 rounded-xl border border-green-600 bg-white px-3.5 text-xs font-bold text-green-700 transition-colors hover:bg-green-50 active:scale-95 whitespace-nowrap sm:text-sm"
+                className="inline-flex min-h-[34px] shrink-0 items-center gap-0.5 rounded-full border border-green-600 bg-white px-3 text-xs font-bold text-green-700 transition-transform duration-100 hover:bg-green-50 active:scale-95 whitespace-nowrap"
               >
                 <span>{t.categoriesPage.allCategoriesShortcut}</span>
                 <ChevronRight
-                  className="h-4 w-4 shrink-0 rtl:rotate-180"
+                  className="h-3.5 w-3.5 shrink-0 rtl:rotate-180"
                   aria-hidden="true"
                 />
               </button>
@@ -223,6 +190,7 @@ export function CatalogToolbar({
             selectedCategoryId={
               selectedCategoryId !== 'all' ? selectedCategoryId : null
             }
+            lowBandwidthMode={lowBandwidthMode}
             onSelectCategory={(categoryId) =>
               onSelectCategory(
                 selectedCategoryId === categoryId ? 'all' : categoryId
@@ -234,17 +202,17 @@ export function CatalogToolbar({
         </div>
       )}
 
-      {/* Row 4: Subcategory Chips (visible when a category with subcategories is active) */}
+      {/* Row 5: Subcategory Chips (visible when active category has subcategories) */}
       {selectedCategory && selectedCategory.subcategories.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pt-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
           <button
             type="button"
             onClick={() => onSelectSubcategory('all')}
             aria-pressed={selectedSubcategoryId === 'all'}
-            className={`min-h-[48px] shrink-0 rounded-xl px-3.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+            className={`min-h-[36px] shrink-0 rounded-full px-3.5 text-xs font-bold transition-transform duration-100 active:scale-95 whitespace-nowrap ${
               selectedSubcategoryId === 'all'
-                ? 'bg-[#EFF6F2] text-[#15663C] ring-1 ring-inset ring-[#15663C]'
-                : 'bg-[#F4F6F3] text-[#4E5750] hover:bg-[#E8ECE7]'
+                ? 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             {t.storefront.allSubcategories}
@@ -258,10 +226,10 @@ export function CatalogToolbar({
                 type="button"
                 onClick={() => onSelectSubcategory(sub.id)}
                 aria-pressed={active}
-                className={`min-h-[48px] shrink-0 rounded-xl px-3.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`min-h-[36px] shrink-0 rounded-full px-3.5 text-xs font-bold transition-transform duration-100 active:scale-95 whitespace-nowrap ${
                   active
-                    ? 'bg-[#EFF6F2] text-[#15663C] ring-1 ring-inset ring-[#15663C]'
-                    : 'bg-[#F4F6F3] text-[#4E5750] hover:bg-[#E8ECE7]'
+                    ? 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 {getNameByLang(sub, language)}
@@ -270,6 +238,13 @@ export function CatalogToolbar({
           })}
         </div>
       )}
+
+      {/* Quiet item count line */}
+      <div className="flex items-center justify-between pt-0.5 text-[11px] font-medium text-gray-500 tabular-nums">
+        <span>
+          {visibleCount} {t.storefront.itemsCount}
+        </span>
+      </div>
     </section>
   );
 }

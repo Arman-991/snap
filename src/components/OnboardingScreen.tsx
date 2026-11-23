@@ -114,8 +114,8 @@ export function OnboardingScreen({
         : null;
 
   return (
-    <div className="min-h-dvh bg-[#F6F7F5] px-4 py-6 sm:py-10">
-      <div className="mx-auto max-w-lg">
+    <div className="min-h-[100dvh] bg-[#F8FAFC] px-4 py-6">
+      <div className="mx-auto w-full">
         {/* Top language switcher */}
         <div className="mb-5 flex items-center justify-between gap-3">
           <span className="font-display text-lg font-bold tracking-tight text-[#141A15]">

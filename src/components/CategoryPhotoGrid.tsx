@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
-import { FALLBACK_CATEGORY_PHOTO } from '../data/defaultCategories';
+import { useEffect, useRef, useState } from 'react';
 import { getNameByLang } from '../i18n/format';
 import type { Category, Language } from '../types/grocery';
 import { resolveCategoryPhotoSrc } from '../utils/supermarketLogic';
+import { CategorySvgArt } from './CategorySvgArt';
 
 interface CategoryPhotoCardProps {
   category: Category;
   language: Language;
   isSelected: boolean;
+  lowBandwidthMode: boolean;
   onSelect: () => void;
   testId: string;
 }
@@ -16,15 +17,24 @@ function CategoryPhotoCard({
   category,
   language,
   isSelected,
+  lowBandwidthMode,
   onSelect,
   testId,
 }: CategoryPhotoCardProps) {
-  const resolvedSrc = resolveCategoryPhotoSrc(category);
-  const [imgSrc, setImgSrc] = useState(resolvedSrc);
+  const photoSrc = resolveCategoryPhotoSrc(category);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
-    setImgSrc(resolvedSrc);
-  }, [resolvedSrc]);
+    setImgFailed(false);
+    const el = imgRef.current;
+    if (!lowBandwidthMode && el && el.complete && el.naturalWidth > 0) {
+      setImgLoaded(true);
+    } else {
+      setImgLoaded(false);
+    }
+  }, [photoSrc, lowBandwidthMode]);
 
   const title = getNameByLang(category, language);
 
@@ -34,30 +44,43 @@ function CategoryPhotoCard({
       data-testid={testId}
       aria-pressed={isSelected}
       onClick={onSelect}
-      className={`group flex h-full w-full flex-col items-center rounded-2xl border bg-white p-2 text-center transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 sm:p-2.5 ${
-        isSelected
-          ? 'border-green-600 bg-green-50/40 ring-2 ring-green-600 shadow-sm'
-          : 'border-[#ECEFF2] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-[#D5DDE3]'
-      }`}
+      className="group flex w-full flex-col items-center text-center focus-visible:outline-none"
     >
-      <div className="relative flex aspect-square w-full max-w-[132px] items-center justify-center overflow-hidden rounded-xl bg-white p-0.5">
-        <img
-          src={imgSrc}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          onError={() => {
-            if (imgSrc !== FALLBACK_CATEGORY_PHOTO) {
-              setImgSrc(FALLBACK_CATEGORY_PHOTO);
-            }
-          }}
-          className="h-full w-full rounded-lg object-contain object-center drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.04]"
+      {/* TOP: Big Full-Bleed Square Photo Box (0ms SVG Base + Smooth Fade-In Photo) */}
+      <div
+        className={`relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50 shadow-sm transition-all duration-200 group-hover:shadow-md group-active:scale-[0.97] group-focus-visible:ring-2 group-focus-visible:ring-green-600 group-focus-visible:ring-offset-2 ${
+          isSelected ? 'ring-[3px] ring-green-600 ring-offset-2 shadow-md' : ''
+        }`}
+      >
+        {/* Base Layer (0ms instant inline SVG — never blank on slow 3G/offline) */}
+        <CategorySvgArt
+          category={category}
+          className="absolute inset-0 h-full w-full"
         />
+
+        {/* Photo Layer (fades in smoothly over SVG; skipped completely in Low-Bandwidth Mode) */}
+        {!lowBandwidthMode && !imgFailed && (
+          <img
+            ref={imgRef}
+            src={photoSrc}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgFailed(true)}
+            className={`absolute inset-0 h-full w-full object-cover object-center transition-all duration-300 group-hover:scale-[1.04] ${
+              imgLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        )}
       </div>
 
+      {/* BOTTOM: Crisp Localized Category Label Cleanly Outside & Under the Photo */}
       <span
         dir="auto"
-        className="mt-2 line-clamp-2 min-h-[2.25rem] w-full text-center font-display text-xs font-semibold leading-snug text-gray-800 sm:text-sm"
+        className={`mt-2 line-clamp-2 w-full text-center font-display text-sm font-bold leading-tight sm:text-base ${
+          isSelected ? 'text-green-700' : 'text-gray-800'
+        }`}
       >
         {title}
       </span>
@@ -69,6 +92,7 @@ interface CategoryPhotoGridProps {
   categories: Category[];
   language: Language;
   selectedCategoryId?: string | null;
+  lowBandwidthMode?: boolean;
   onSelectCategory: (categoryId: string) => void;
   testId?: string;
   testIdPrefix?: string;
@@ -78,20 +102,18 @@ export function CategoryPhotoGrid({
   categories,
   language,
   selectedCategoryId = null,
+  lowBandwidthMode = false,
   onSelectCategory,
   testId = 'category-photo-grid',
   testIdPrefix = 'category-tile',
 }: CategoryPhotoGridProps) {
   if (categories.length === 0) return null;
 
-  const desktopColsClass =
-    categories.length === 16 ? 'lg:grid-cols-8' : 'lg:grid-cols-5';
-
   return (
     <div
       dir="ltr"
       data-testid={testId}
-      className={`grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3.5 ${desktopColsClass}`}
+      className="grid grid-cols-3 gap-3"
     >
       {categories.map((category) => (
         <CategoryPhotoCard
@@ -101,6 +123,7 @@ export function CategoryPhotoGrid({
           isSelected={Boolean(
             selectedCategoryId && selectedCategoryId === category.id
           )}
+          lowBandwidthMode={lowBandwidthMode}
           onSelect={() => onSelectCategory(category.id)}
           testId={`${testIdPrefix}-${category.id}`}
         />

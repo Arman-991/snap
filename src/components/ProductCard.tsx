@@ -18,7 +18,8 @@ interface ProductCardProps {
   onOpenDetail: (product: Product) => void;
 }
 
-const FALLBACK_IMAGE = '/src/assets/images/prod_vine_tomatoes_1795087970471.jpg';
+const FALLBACK_IMAGE =
+  '/src/assets/images/prod_vine_tomatoes_1795087970471.jpg';
 
 export function ProductCard({
   product,
@@ -42,21 +43,23 @@ export function ProductCard({
 
   return (
     <article
-      className={`flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E5E7E4] bg-white transition-colors hover:border-[#C5D1C8] ${
+      data-testid={`product-card-${product.id}`}
+      className={`flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-2xs transition-colors hover:border-gray-300 ${
         !inStock ? 'opacity-80' : ''
       }`}
     >
-      {/* Cohesive interactive top area (>= 48px touch target) */}
+      {/* Cohesive interactive top area */}
       <button
         type="button"
         onClick={() => onOpenDetail(product)}
-        className="group flex flex-1 flex-col text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--brand-primary)]"
+        className="group flex flex-1 flex-col text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-green-600"
       >
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F3F5F2]">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-50">
           <img
             src={imgSrc}
             alt={name}
             loading="lazy"
+            decoding="async"
             onError={() => {
               if (imgSrc !== FALLBACK_IMAGE) setImgSrc(FALLBACK_IMAGE);
             }}
@@ -65,34 +68,34 @@ export function ProductCard({
             }`}
           />
           {!inStock ? (
-            <span className="absolute start-2.5 top-2.5 rounded-md bg-[#B42318] px-2 py-0.5 text-[11px] font-semibold text-white">
+            <span className="absolute start-2 top-2 rounded-md bg-red-700 px-1.5 py-0.5 text-[10px] font-bold text-white">
               {t.product.outOfStock}
             </span>
           ) : (
             isDeal && (
-              <span className="absolute start-2.5 top-2.5 rounded-md bg-[var(--brand-primary)] px-2 py-0.5 text-[11px] font-semibold text-[var(--brand-primary-fg)]">
+              <span className="absolute start-2 top-2 rounded-md bg-green-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
                 {t.storefront.sections.deals}
               </span>
             )
           )}
         </div>
 
-        <div className="flex flex-1 flex-col p-3.5 pb-2">
-          <span className="text-xs font-medium text-[#616B63]">
+        <div className="flex flex-1 flex-col px-2.5 pt-2.5 pb-1.5">
+          <span className="text-[11px] font-medium text-gray-500">
             {product.size}
           </span>
 
-          <h3 className="mt-1 line-clamp-2 font-display text-sm font-bold leading-snug text-[#141A15] sm:text-base">
+          <h3 className="mt-0.5 line-clamp-2 font-display text-[13px] font-bold leading-snug text-[#141A15]">
             {name}
           </h3>
 
-          <div className="mt-auto pt-3">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="font-display text-base font-bold text-[#141A15] tabular-nums">
+          <div className="mt-auto pt-2">
+            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+              <span className="font-display text-sm font-extrabold text-[#141A15] tabular-nums">
                 {formatIqd(product.ourPrice, language)}
               </span>
               {hasDiscount && (
-                <span className="text-xs font-medium text-[#879189] line-through tabular-nums">
+                <span className="text-[11px] font-medium text-gray-400 line-through tabular-nums">
                   {formatIqd(product.marketPrice, language)}
                 </span>
               )}
@@ -101,43 +104,44 @@ export function ProductCard({
         </div>
       </button>
 
-      {/* Bottom 48px Add / Quantity Stepper / Out of Stock */}
-      <div className="p-3.5 pt-2">
+      {/* Bottom 44px Add / Quantity Stepper */}
+      <div className="p-2.5 pt-1.5">
         {!inStock ? (
           <button
             type="button"
             disabled
-            className="flex min-h-[48px] w-full cursor-not-allowed items-center justify-center rounded-xl border border-[#E5E7E4] bg-[#F3F5F2] px-4 text-sm font-semibold text-[#6B756D]"
+            className="flex min-h-[42px] w-full cursor-not-allowed items-center justify-center rounded-xl border border-gray-200 bg-gray-100 px-2 text-xs font-semibold text-gray-500"
           >
             {t.product.outOfStock}
           </button>
         ) : quantity === 0 ? (
           <button
             type="button"
+            data-testid={`product-add-${product.id}`}
             onClick={() => onIncrement(product)}
-            className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--brand-primary)] px-4 text-sm font-semibold text-[var(--brand-primary-fg)] transition-opacity hover:opacity-92 active:scale-[0.98]"
+            className="flex min-h-[42px] w-full items-center justify-center gap-1 rounded-xl bg-green-600 px-3 text-xs font-bold text-white transition-transform duration-100 hover:bg-green-700 active:scale-95"
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{t.product.add}</span>
           </button>
         ) : (
-          <div className="flex min-h-[48px] items-center justify-between rounded-xl border border-[var(--brand-primary)] bg-[#EFF6F2]">
+          <div className="flex min-h-[42px] items-center justify-between rounded-xl border border-green-600 bg-green-50">
             <button
               type="button"
               onClick={() => onDecrement(product)}
               aria-label={`${t.product.decreaseQty}: ${name}`}
-              className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--brand-primary)] transition-all hover:bg-[#DFEDE5] active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-green-700 transition-transform duration-100 hover:bg-green-100 active:scale-95"
             >
               <Minus className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className="font-display text-sm font-bold text-[#141A15] tabular-nums">
+            <span className="font-display text-sm font-extrabold text-[#141A15] tabular-nums">
               {quantity}
             </span>
             <button
               type="button"
               onClick={() => onIncrement(product)}
               aria-label={`${t.product.increaseQty}: ${name}`}
-              className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--brand-primary)] transition-all hover:bg-[#DFEDE5] active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-green-700 transition-transform duration-100 hover:bg-green-100 active:scale-95"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
             </button>

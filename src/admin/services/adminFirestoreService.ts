@@ -705,6 +705,7 @@ export async function saveStoreSettingsAdmin(
       logoUrl: (settings.logoUrl || '').slice(0, 90000),
       homeSections: (settings.homeSections || []).slice(0, 10),
       contactLinks: (settings.contactLinks || []).slice(0, 15),
+      lowBandwidthCategorySvgOnly: Boolean(settings.lowBandwidthCategorySvgOnly),
     };
     await setDoc(doc(db, 'settings', 'store'), payload);
     await logAdminAction(
@@ -712,13 +713,14 @@ export async function saveStoreSettingsAdmin(
       'UPDATE_STORE_SETTINGS',
       'settings',
       'store',
-      `Updated store settings (open=${settings.isStoreOpen}, fee=${settings.deliveryFee}, min=${settings.minimumOrder}, maxPerHour=${payload.maxOrdersPerHour})`,
+      `Updated store settings (open=${settings.isStoreOpen}, fee=${settings.deliveryFee}, min=${settings.minimumOrder}, maxPerHour=${payload.maxOrdersPerHour}, lowBandwidth=${Boolean(settings.lowBandwidthCategorySvgOnly)})`,
       {
         isStoreOpen: settings.isStoreOpen,
         deliveryFee: settings.deliveryFee,
         minimumOrder: settings.minimumOrder,
         maxOrdersPerHour: payload.maxOrdersPerHour,
         primaryColor: color,
+        lowBandwidthCategorySvgOnly: Boolean(settings.lowBandwidthCategorySvgOnly),
       }
     );
   } catch (error) {

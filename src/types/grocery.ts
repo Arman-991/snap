@@ -68,6 +68,7 @@ export interface StoreSettings {
   logoUrl?: string;
   homeSections?: HomeSectionConfig[];
   contactLinks?: ContactLinkItem[];
+  lowBandwidthCategorySvgOnly?: boolean;
 }
 
 export type TrilingualPartial = Partial<Record<Language, string>>;

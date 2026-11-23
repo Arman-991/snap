@@ -9,7 +9,6 @@ import {
   X,
 } from 'lucide-react';
 import { CategoryPhotoGrid } from '../components/CategoryPhotoGrid';
-import { FloatingCartBar } from '../components/FloatingCartBar';
 import { formatIqd, getNameByLang } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { Category, Language, Product } from '../types/grocery';
@@ -25,13 +24,13 @@ interface CategoriesPageProps {
   categories: Category[];
   allProducts: Product[];
   selectedCategoryId: string | null;
+  lowBandwidthMode?: boolean;
   getQuantity: (productId: string) => number;
   onSelectCategory: (categoryId: string | null) => void;
   onOpenQuickList: () => void;
   onIncrement: (product: Product) => void;
   onDecrement: (product: Product) => void;
   onOpenDetail: (product: Product) => void;
-  onOpenCart: () => void;
 }
 
 interface CompactCategoryProductCardProps {
@@ -175,13 +174,13 @@ export function CategoriesPage({
   categories,
   allProducts,
   selectedCategoryId,
+  lowBandwidthMode = false,
   getQuantity,
   onSelectCategory,
   onOpenQuickList,
   onIncrement,
   onDecrement,
   onOpenDetail,
-  onOpenCart,
 }: CategoriesPageProps) {
   const [selectedSubId, setSelectedSubId] = useState<string>('all');
   const [inCategoryQuery, setInCategoryQuery] = useState<string>('');
@@ -223,13 +222,13 @@ export function CategoriesPage({
     const categoryTitle = getNameByLang(activeCategory, language);
 
     return (
-      <main className="mx-auto max-w-[1280px] px-4 pb-24 sm:px-6 lg:px-8">
+      <main className="w-full px-3 pb-4">
         {/* Sticky Top Bar: Mirrored Back Arrow, Category Name, Search, Subcategory Pills */}
         <div
           data-testid="category-detail-header"
-          className="sticky top-14 z-20 -mx-4 border-b border-[#E2E8F0] bg-white/96 px-4 pt-2.5 pb-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+          className="sticky top-14 z-20 -mx-3 border-b border-gray-200/80 bg-white/95 px-3 pt-2.5 pb-3 backdrop-blur-md"
         >
-          <div className="mx-auto max-w-[1280px] space-y-2.5">
+          <div className="space-y-2.5">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -287,7 +286,7 @@ export function CategoriesPage({
               <div
                 role="tablist"
                 aria-label={categoryTitle}
-                className="flex items-center gap-2 overflow-x-auto pt-0.5 pb-0.5"
+                className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-0.5 pb-0.5"
               >
                 <button
                   type="button"
@@ -354,7 +353,7 @@ export function CategoriesPage({
           ) : (
             <div
               data-testid="category-product-grid"
-              className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5 lg:grid-cols-4"
+              className="grid grid-cols-2 gap-2.5"
             >
               {detailProducts.map((product) => (
                 <CompactCategoryProductCard
@@ -371,21 +370,19 @@ export function CategoriesPage({
             </div>
           )}
         </div>
-
-        <FloatingCartBar t={t} language={language} onOpenCart={onOpenCart} />
       </main>
     );
   }
 
   // --- VIEW A: Snapp Express-Style Visual 3-Column Category Grid ---
   return (
-    <main className="mx-auto max-w-[1280px] space-y-5 px-4 pt-5 pb-20 sm:px-6 lg:px-8">
+    <main className="w-full space-y-4 px-3 pt-4 pb-4">
       {/* Header */}
       <div>
-        <h1 className="font-display text-xl font-extrabold text-[#0F172A] sm:text-2xl">
+        <h1 className="font-display text-lg font-extrabold text-[#0F172A]">
           {t.categoriesPage.title}
         </h1>
-        <p className="mt-0.5 text-xs text-[#64748B] sm:text-sm">
+        <p className="mt-0.5 text-xs text-gray-500">
           {t.categoriesPage.subtitle}
         </p>
       </div>
@@ -417,12 +414,11 @@ export function CategoriesPage({
       <CategoryPhotoGrid
         categories={categories}
         language={language}
+        lowBandwidthMode={lowBandwidthMode}
         onSelectCategory={(categoryId) => onSelectCategory(categoryId)}
         testId="categories-visual-grid"
         testIdPrefix="category-tile"
       />
-
-      <FloatingCartBar t={t} language={language} onOpenCart={onOpenCart} />
     </main>
   );
 }

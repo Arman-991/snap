@@ -47,6 +47,9 @@
         },
         "contactLinks": {
           "type": "array"
+        },
+        "lowBandwidthCategorySvgOnly": {
+          "type": "boolean"
         }
       },
       "required": [

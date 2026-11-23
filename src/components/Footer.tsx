@@ -7,17 +7,9 @@ interface FooterProps {
   t: TranslationDictionary;
   language: Language;
   settings: StoreSettings;
-  onChangeLanguage: (lang: Language) => void;
 }
 
-const LANGUAGES: Language[] = ['ku', 'ar', 'en'];
-
-export function Footer({
-  t,
-  language,
-  settings,
-  onChangeLanguage,
-}: FooterProps) {
+export function Footer({ t, language, settings }: FooterProps) {
   const trimmedStoreName = settings.storeName.trim();
   const brandLabel =
     !trimmedStoreName || trimmedStoreName === 'Bazar Fresh'
@@ -25,47 +17,24 @@ export function Footer({
       : trimmedStoreName;
 
   return (
-    <footer className="mt-14 border-t border-[#E5E7E4] bg-white pb-20 pt-8 md:pb-10">
-      <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-md space-y-1.5">
-            <p className="font-display text-base font-bold text-[#141A15]">
-              {brandLabel}
-            </p>
-            <p className="text-sm text-[#566058]">{t.footer.tagline}</p>
-            <p className="text-xs font-medium text-[#6B756D]">
-              {t.storefront.deliveryHoursLabel}:{' '}
-              {getDeliveryHoursByLang(settings.deliveryHoursText, language)}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <PWAInstallButton t={t} />
-
-            <div className="inline-flex items-center rounded-xl border border-[#E5E7E4] bg-[#FAFBF9] p-1">
-              {LANGUAGES.map((code) => {
-                const active = language === code;
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => onChangeLanguage(code)}
-                    aria-pressed={active}
-                    className={`min-h-[48px] rounded-lg px-3 text-xs font-semibold transition-colors whitespace-nowrap ${
-                      active
-                        ? 'bg-[var(--brand-primary)] text-[var(--brand-primary-fg)]'
-                        : 'text-[#4E5750] hover:bg-[#ECEFEA]'
-                    }`}
-                  >
-                    {t.languageNames[code]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+    <footer className="mt-8 border-t border-gray-200/80 bg-white px-4 py-6">
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <p className="font-display text-sm font-extrabold text-[#141A15]">
+            {brandLabel}
+          </p>
+          <p className="text-xs leading-relaxed text-gray-500">
+            {t.footer.tagline}
+          </p>
+          <p className="text-[11px] font-medium text-gray-500">
+            {t.storefront.deliveryHoursLabel}:{' '}
+            {getDeliveryHoursByLang(settings.deliveryHoursText, language)}
+          </p>
         </div>
 
-        <p className="mt-6 border-t border-[#ECEFEA] pt-4 text-xs text-[#78827A]">
+        <PWAInstallButton t={t} />
+
+        <p className="border-t border-gray-100 pt-3 text-[11px] text-gray-400">
           {t.footer.copyright}
         </p>
       </div>

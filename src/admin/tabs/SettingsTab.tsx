@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Power, Save } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Power, Save, Zap } from 'lucide-react';
 import type { StoreSettings } from '../../types/grocery';
 import { normalizeIraqiPhone } from '../../utils/supermarketLogic';
 import type { AdminDictionary } from '../i18n/adminTranslations';
@@ -65,6 +65,15 @@ export function SettingsTab({ t, actor, settings, onRefresh }: SettingsTabProps)
     await handleSave(next);
   };
 
+  const handleToggleLowBandwidth = async () => {
+    const next = {
+      ...draft,
+      lowBandwidthCategorySvgOnly: !draft.lowBandwidthCategorySvgOnly,
+    };
+    setDraft(next);
+    await handleSave(next);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -120,6 +129,60 @@ export function SettingsTab({ t, actor, settings, onRefresh }: SettingsTabProps)
             </span>
             <span>
               {draft.isStoreOpen ? t.settings.storeOpen : t.settings.storeClosed}
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* Low-Bandwidth Mode Toggle (Instant 0ms SVGs Only for Categories) */}
+      <section className="rounded-xl border border-[#E4E7E2] bg-white p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${
+                draft.lowBandwidthCategorySvgOnly
+                  ? 'border-[#B9E2CB] bg-[#EBF7F0] text-[#15663C]'
+                  : 'border-[#E4E7E2] bg-[#F8FAF8] text-[#5B665D]'
+              }`}
+            >
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-[#141A15]">
+                {t.settings.lowBandwidthTitle}
+              </h3>
+              <p className="mt-0.5 text-xs leading-relaxed text-[#5B665D] sm:text-sm">
+                {t.settings.lowBandwidthDesc}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            data-testid="low-bandwidth-toggle"
+            disabled={saving}
+            onClick={() => void handleToggleLowBandwidth()}
+            role="switch"
+            aria-checked={Boolean(draft.lowBandwidthCategorySvgOnly)}
+            className={`inline-flex min-h-[48px] shrink-0 items-center justify-center gap-3 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors ${
+              draft.lowBandwidthCategorySvgOnly
+                ? 'bg-[#15663C] text-white hover:bg-[#115331]'
+                : 'border border-[#D4DAD2] bg-[#F8FAF8] text-[#3C463E] hover:bg-[#EEF2EE]'
+            }`}
+          >
+            <span
+              className={`inline-flex h-6 w-11 items-center rounded-full p-0.5 transition-all ${
+                draft.lowBandwidthCategorySvgOnly
+                  ? 'justify-end bg-white/25'
+                  : 'justify-start bg-[#CBD5E1]'
+              }`}
+            >
+              <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
+            </span>
+            <span>
+              {draft.lowBandwidthCategorySvgOnly
+                ? t.settings.lowBandwidthOn
+                : t.settings.lowBandwidthOff}
             </span>
           </button>
         </div>

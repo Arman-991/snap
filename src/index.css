@@ -19,6 +19,14 @@ html {
 body {
   overflow-x: clip;
   min-height: 100dvh;
+  background-color: #EEF2F0;
+}
+
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, .font-display {
@@ -27,6 +35,15 @@ h1, h2, h3, .font-display {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

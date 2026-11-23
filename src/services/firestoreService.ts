@@ -352,6 +352,7 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
           ? d.homeSections
           : DEFAULT_STORE_SETTINGS.homeSections,
       contactLinks: resolvedContacts,
+      lowBandwidthCategorySvgOnly: Boolean(d.lowBandwidthCategorySvgOnly),
     };
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, path);

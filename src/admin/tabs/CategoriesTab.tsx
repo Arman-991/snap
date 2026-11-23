@@ -103,7 +103,7 @@ export function CategoriesTab({
 
   const handleCategoryImageUpload = async (file: File | null) => {
     if (!file || !editing) return;
-    const dataUrl = await compressImageFileToDataUrl(file, 400, 45_000);
+    const dataUrl = await compressImageFileToDataUrl(file, 360, 30_000, 0.72);
     setEditing({ ...editing, imageUrl: dataUrl });
   };
 

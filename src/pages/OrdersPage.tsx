@@ -53,13 +53,13 @@ export function OrdersPage({
   onStartShopping,
 }: OrdersPageProps) {
   return (
-    <main className="mx-auto max-w-[960px] space-y-6 px-4 pt-6 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <main className="w-full space-y-4 px-3 pt-4">
+      <div className="flex flex-col gap-2.5">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-[#141A15] sm:text-3xl">
+          <h1 className="font-display text-xl font-extrabold tracking-tight text-[#141A15]">
             {t.orders.title}
           </h1>
-          <p className="mt-1 text-sm text-[#566058]">{t.orders.subtitle}</p>
+          <p className="mt-0.5 text-xs text-gray-500">{t.orders.subtitle}</p>
         </div>
         <OrderAlertsToggle
           status={browserAlertStatus}

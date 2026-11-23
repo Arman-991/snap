@@ -116,14 +116,14 @@ export function CartDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/45 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex justify-center bg-black/45 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label={t.cart.title}
       onClick={onClose}
     >
       <div
-        className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
+        className="flex h-full w-full max-w-[480px] flex-col bg-white shadow-2xl pb-[env(safe-area-inset-bottom)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Drawer Header */}

@@ -164,6 +164,10 @@ export interface AdminDictionary {
     deliveryHoursAr: string;
     deliveryHoursEn: string;
     invalidPhoneError: string;
+    lowBandwidthTitle: string;
+    lowBandwidthDesc: string;
+    lowBandwidthOn: string;
+    lowBandwidthOff: string;
   };
   reports: {
     title: string;
@@ -374,6 +378,10 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       deliveryHoursAr: 'Delivery Hours (Arabic)',
       deliveryHoursEn: 'Delivery Hours (English)',
       invalidPhoneError: 'Enter a valid Iraqi number normalized as 9647XXXXXXXXX (13 digits).',
+      lowBandwidthTitle: 'Low-Bandwidth Mode (Show Instant SVGs Only for Categories)',
+      lowBandwidthDesc: 'When ON, category buttons render instant 0ms inline SVG illustrations without downloading any category photos — ideal for slow mobile data.',
+      lowBandwidthOn: 'ON (Instant SVGs Only)',
+      lowBandwidthOff: 'OFF (SVGs + Fast Photos)',
     },
     reports: {
       title: 'Reports & Analytics',
@@ -582,6 +590,10 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       deliveryHoursAr: 'کاتی گەیاندن (عەرەبی)',
       deliveryHoursEn: 'کاتی گەیاندن (ئینگلیزی)',
       invalidPhoneError: 'تکایە ژمارەی عێراقی دروست بە شێوەی 9647XXXXXXXXX بنووسە.',
+      lowBandwidthTitle: 'دۆخی ئینتەرنێتی خاو (تەنها SVGی خێرا بۆ پۆلەکان)',
+      lowBandwidthDesc: 'کاتێک چالاکە، دوگمەی پۆلەکان تەنها وێنەی SVGی خێرا پیشان دەدەن بەبێ دابەزاندنی وێنەی دەرەکی — زۆر گونجاوە بۆ هێڵی لاواز.',
+      lowBandwidthOn: 'چالاک (تەنها SVG)',
+      lowBandwidthOff: 'ناچالاک (SVG + وێنەی خێرا)',
     },
     reports: {
       title: 'ڕاپۆرت و ئامارەکان',
@@ -790,6 +802,10 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       deliveryHoursAr: 'ساعات التوصيل (عربي)',
       deliveryHoursEn: 'ساعات التوصيل (إنجليزي)',
       invalidPhoneError: 'يرجى إدخال رقم عراقي بصيغة 9647XXXXXXXXX (13 رقماً).',
+      lowBandwidthTitle: 'وضع الإنترنت الضعيف (عرض رسومات SVG الفورية للأقسام فقط)',
+      lowBandwidthDesc: 'عند التفعيل، تعرض أزرار الأقسام رسومات SVG فورية خلال 0ms دون تحميل صور الأقسام — مثالي لشبكات الموبايل البطيئة.',
+      lowBandwidthOn: 'مفعّل (SVG فوري فقط)',
+      lowBandwidthOff: 'متوقف (SVG + صور سريعة)',
     },
     reports: {
       title: 'التقارير والتحليلات',

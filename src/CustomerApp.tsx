@@ -5,9 +5,13 @@ import {
   DeliveredThankYouModal,
   type DeliveredThankYouPayload,
 } from './components/DeliveredThankYouModal';
+import { FloatingCartBar } from './components/FloatingCartBar';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
-import { MobileBottomNav } from './components/MobileBottomNav';
+import {
+  MobileBottomNav,
+  type BottomNavTab,
+} from './components/MobileBottomNav';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import {
   OrderStatusBanner,
@@ -228,6 +232,18 @@ function CustomerAppShell({
 
   const { lifetimeSavings, deliveredOrderCount } = useMemo(
     () => computeLifetimeSavings(ordersHook.orders),
+    [ordersHook.orders]
+  );
+
+  const hasActiveOrder = useMemo(
+    () =>
+      ordersHook.orders.some(
+        (order) =>
+          order.status === 'New' ||
+          order.status === 'Called' ||
+          order.status === 'Confirmed' ||
+          order.status === 'Bought'
+      ),
     [ordersHook.orders]
   );
 
@@ -570,14 +586,22 @@ function CustomerAppShell({
   );
 
   const handleSelectMarket = useCallback(() => {
+    if (activeView === 'market' && catalog.selectedSection === 'all') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     catalog.setSelectedSection('all');
     setActiveView('market');
-  }, [catalog]);
+  }, [activeView, catalog]);
 
   const handleSelectCategories = useCallback(() => {
+    if (activeView === 'categories' && selectedVisualCategoryId === null) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSelectedVisualCategoryId(null);
     setActiveView('categories');
-  }, []);
+  }, [activeView, selectedVisualCategoryId]);
 
   const handleOpenQuickList = useCallback((from: 'market' | 'categories') => {
     setQuickListReturnView(from);
@@ -585,27 +609,59 @@ function CustomerAppShell({
   }, []);
 
   const handleSelectDeals = useCallback(() => {
+    if (activeView === 'market' && catalog.selectedSection === 'deals') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     catalog.setSelectedSection('deals');
     setActiveView('market');
-  }, [catalog]);
+  }, [activeView, catalog]);
 
-  const handleBottomNavSelect = useCallback((view: AppView) => {
-    if (view === 'categories') {
-      setSelectedVisualCategoryId(null);
-    }
-    setActiveView(view);
-  }, []);
+  const handleBottomNavTab = useCallback(
+    (tab: BottomNavTab) => {
+      if (tab === 'market') {
+        handleSelectMarket();
+        return;
+      }
+      if (tab === 'categories') {
+        handleSelectCategories();
+        return;
+      }
+      if (tab === 'deals') {
+        handleSelectDeals();
+        return;
+      }
+      if (tab === 'orders') {
+        if (activeView === 'orders') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        setActiveView('orders');
+        return;
+      }
+      if (tab === 'profile') {
+        if (activeView === 'profile') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        setActiveView('profile');
+      }
+    },
+    [activeView, handleSelectCategories, handleSelectDeals, handleSelectMarket]
+  );
 
   if (authProfile.profileLoading && !authProfile.profile && !bypassOnboarding) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F6F7F5] px-4">
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-primary)] font-display text-lg font-bold text-[var(--brand-primary-fg)]">
-            B
+      <div className="min-h-[100dvh] w-full bg-[#EEF2F0]">
+        <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] items-center justify-center bg-[#F8FAFC] px-4 shadow-[0_0_40px_rgba(0,0,0,0.08)]">
+          <div className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-primary)] font-display text-lg font-extrabold text-[var(--brand-primary-fg)]">
+              S
+            </div>
+            <p className="mt-3 font-display text-base font-bold text-[#141A15]">
+              {t.brandName}
+            </p>
           </div>
-          <p className="mt-3 font-display text-base font-bold text-[#141A15]">
-            {t.brandName}
-          </p>
         </div>
       </div>
     );
@@ -613,50 +669,60 @@ function CustomerAppShell({
 
   if (!authProfile.profile && !bypassOnboarding) {
     return (
-      <OnboardingScreen
-        t={t}
-        language={language}
-        anonymousDisabled={authProfile.anonymousDisabled}
-        onChangeLanguage={setLanguage}
-        onComplete={handleCompleteOnboarding}
-      />
+      <div className="min-h-[100dvh] w-full bg-[#EEF2F0]">
+        <div className="relative mx-auto min-h-[100dvh] w-full max-w-[480px] bg-[#F8FAFC] shadow-[0_0_40px_rgba(0,0,0,0.08)]">
+          <OnboardingScreen
+            t={t}
+            language={language}
+            anonymousDisabled={authProfile.anonymousDisabled}
+            onChangeLanguage={setLanguage}
+            onComplete={handleCompleteOnboarding}
+          />
+        </div>
+      </div>
     );
   }
 
-  return (
-    <div className="flex min-h-dvh flex-col bg-[#F6F7F5] text-[#141A15]">
-      <Header
-        t={t}
-        language={language}
-        storeName={catalog.settings.storeName}
-        logoUrl={catalog.settings.logoUrl}
-        activeView={activeView}
-        isDealsActive={catalog.selectedSection === 'deals'}
-        notifications={notifications}
-        onSelectNotification={handleSelectNotification}
-        onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
-        onSelectMarket={handleSelectMarket}
-        onSelectCategories={handleSelectCategories}
-        onSelectDeals={handleSelectDeals}
-        onSelectOrders={() => setActiveView('orders')}
-        onSelectProfile={() => setActiveView('profile')}
-        onOpenCart={handleOpenCart}
-      />
+  const showFloatingCart =
+    !isCartOpen && (cart.itemCount > 0 || activeView === 'quicklist');
 
-      {orderAlert && activeView !== 'orders' && (
-        <div className="mx-auto w-full max-w-[1280px] px-4 pt-3 sm:px-6 lg:px-8">
-          <OrderStatusBanner
-            alert={orderAlert}
-            t={t}
-            onDismiss={handleDismissOrderAlert}
-          />
-        </div>
-      )}
+  return (
+    <div className="min-h-[100dvh] w-full bg-[#EEF2F0]">
+      <div
+        data-testid="customer-app-shell"
+        className={`relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col bg-[#F8FAFC] text-[#141A15] shadow-[0_0_40px_rgba(0,0,0,0.08)] ${
+          showFloatingCart
+            ? 'pb-[calc(8.75rem+env(safe-area-inset-bottom))]'
+            : 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
+        }`}
+      >
+        <Header
+          t={t}
+          language={language}
+          storeName={catalog.settings.storeName}
+          logoUrl={catalog.settings.logoUrl}
+          notifications={notifications}
+          onChangeLanguage={setLanguage}
+          onSelectNotification={handleSelectNotification}
+          onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+          onSelectMarket={handleSelectMarket}
+          onOpenCart={handleOpenCart}
+        />
+
+        {orderAlert && activeView !== 'orders' && (
+          <div className="w-full px-3 pt-3">
+            <OrderStatusBanner
+              alert={orderAlert}
+              t={t}
+              onDismiss={handleDismissOrderAlert}
+            />
+          </div>
+        )}
 
       {toastMessage && (
         <div
           role="status"
-          className="fixed bottom-18 start-4 end-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-[#BCE0CA] bg-[#141A15] px-4 py-3 text-xs font-semibold text-white shadow-lg sm:bottom-6 sm:text-sm"
+          className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100vw-24px)] max-w-[456px] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl border border-[#BCE0CA] bg-[#141A15] px-4 py-2.5 text-xs font-semibold text-white shadow-lg"
         >
           <span className="flex items-center gap-2">
             <CheckCircle2
@@ -669,7 +735,7 @@ function CustomerAppShell({
             type="button"
             onClick={() => setToastMessage(null)}
             aria-label={t.cart.close}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white/80 hover:text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/80 hover:text-white active:scale-95"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -681,7 +747,6 @@ function CustomerAppShell({
           <MarketPage
             t={t}
             language={language}
-            onChangeLanguage={setLanguage}
             settings={catalog.settings}
             banners={catalog.banners}
             categories={catalog.categories}
@@ -718,13 +783,13 @@ function CustomerAppShell({
             categories={catalog.categories}
             allProducts={catalog.allActiveProducts}
             selectedCategoryId={selectedVisualCategoryId}
+            lowBandwidthMode={Boolean(catalog.settings.lowBandwidthCategorySvgOnly)}
             getQuantity={cart.getQuantity}
             onSelectCategory={setSelectedVisualCategoryId}
             onOpenQuickList={() => handleOpenQuickList('categories')}
             onIncrement={cart.increment}
             onDecrement={cart.decrement}
             onOpenDetail={setSelectedProduct}
-            onOpenCart={handleOpenCart}
           />
         )}
 
@@ -738,7 +803,6 @@ function CustomerAppShell({
             onIncrement={cart.increment}
             onDecrement={cart.decrement}
             onOpenDetail={setSelectedProduct}
-            onOpenCart={handleOpenCart}
           />
         )}
 
@@ -788,14 +852,26 @@ function CustomerAppShell({
         t={t}
         language={language}
         settings={catalog.settings}
-        onChangeLanguage={setLanguage}
       />
+
+      {!isCartOpen && (
+        <FloatingCartBar
+          t={t}
+          language={language}
+          ctaLabel={
+            activeView === 'quicklist' ? t.quickList.stickyCartCta : undefined
+          }
+          alwaysShow={activeView === 'quicklist'}
+          onOpenCart={handleOpenCart}
+        />
+      )}
 
       <MobileBottomNav
         t={t}
         activeView={activeView}
-        onSelectView={handleBottomNavSelect}
-        onOpenCart={handleOpenCart}
+        isDealsActive={catalog.selectedSection === 'deals'}
+        hasActiveOrder={hasActiveOrder}
+        onSelectTab={handleBottomNavTab}
       />
 
       <CartDrawer
@@ -852,6 +928,7 @@ function CustomerAppShell({
         onIncrement={cart.increment}
         onDecrement={cart.decrement}
       />
+      </div>
     </div>
   );
 }

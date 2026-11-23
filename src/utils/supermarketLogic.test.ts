@@ -35,6 +35,7 @@ import {
   DEFAULT_15_CATEGORIES,
   FALLBACK_CATEGORY_PHOTO,
 } from '../data/defaultCategories';
+import { resolveCategoryArtKey } from '../components/CategorySvgArt';
 import type { Category, OrderRecord, Product } from '../types/grocery';
 
 const sampleProducts: Product[] = [
@@ -732,6 +733,32 @@ test('resolveStorefrontCategories shows all 15 defaults when Firestore has < 3 d
     ['produce', 'bakery']
   );
 });
+
+test('resolveCategoryArtKey resolves a dedicated inline SVG key for all 15 default categories and custom keywords', () => {
+  const keys = new Set(DEFAULT_15_CATEGORIES.map((c) => resolveCategoryArtKey(c)));
+  assert.equal(keys.size, 15);
+  assert.equal(keys.has('default'), false);
+
+  assert.equal(
+    resolveCategoryArtKey({
+      id: 'cat-mwnnrhz0',
+      nameEn: 'fruit',
+      nameKu: 'mewa',
+      nameAr: 'fawakiha',
+    }),
+    'produce'
+  );
+  assert.equal(
+    resolveCategoryArtKey({
+      id: 'custom-misc',
+      nameEn: 'Other Stuff',
+      nameKu: 'هیتر',
+      nameAr: 'أخرى',
+    }),
+    'default'
+  );
+});
+
 
 
 

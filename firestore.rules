@@ -91,7 +91,8 @@ service cloud.firestore {
         data.keys().hasOnly([
           'storeName', 'whatsappPhone', 'deliveryFee', 'minimumOrder',
           'isStoreOpen', 'deliveryHoursText', 'maxOrdersPerHour', 'themeColor',
-          'primaryColor', 'logoUrl', 'homeSections', 'contactLinks'
+          'primaryColor', 'logoUrl', 'homeSections', 'contactLinks',
+          'lowBandwidthCategorySvgOnly'
         ]) &&
         data.storeName is string && data.storeName.size() >= 2 && data.storeName.size() <= 80 &&
         isValidIraqiPhone(data.whatsappPhone) &&
@@ -117,7 +118,8 @@ service cloud.firestore {
           data.contactLinks is list &&
           data.contactLinks.size() <= 15 &&
           (data.contactLinks.size() == 0 || data.contactLinks[0] is map)
-        ));
+        )) &&
+        (!('lowBandwidthCategorySvgOnly' in data) || data.lowBandwidthCategorySvgOnly is bool);
     }
 
     function isValidCmsTranslations(data) {

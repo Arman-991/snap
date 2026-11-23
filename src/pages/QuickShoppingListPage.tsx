@@ -9,7 +9,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { FloatingCartBar } from '../components/FloatingCartBar';
 import { formatIqd, getNameByLang } from '../i18n/format';
 import type { TranslationDictionary } from '../i18n/translations';
 import type { Language, Product } from '../types/grocery';
@@ -187,7 +186,6 @@ interface QuickShoppingListPageProps {
   onIncrement: (product: Product) => void;
   onDecrement: (product: Product) => void;
   onOpenDetail: (product: Product) => void;
-  onOpenCart: () => void;
 }
 
 export function QuickShoppingListPage({
@@ -199,7 +197,6 @@ export function QuickShoppingListPage({
   onIncrement,
   onDecrement,
   onOpenDetail,
-  onOpenCart,
 }: QuickShoppingListPageProps) {
   const [entries, setEntries] = useState<QuickListEntry[]>(() =>
     loadSavedQuickList()
@@ -286,10 +283,10 @@ export function QuickShoppingListPage({
   }, [allProducts, entries, getQuantity, language]);
 
   return (
-    <main className="mx-auto max-w-[1280px] px-4 pb-28 sm:px-6 lg:px-8">
+    <main className="w-full px-3 pb-4">
       {/* Sticky Header Bar */}
-      <div className="sticky top-14 z-20 -mx-4 border-b border-[#E2E8F0] bg-white/96 px-4 py-2.5 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-2">
+      <div className="sticky top-14 z-20 -mx-3 border-b border-gray-200/80 bg-white/95 px-3 py-2.5 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
@@ -450,7 +447,7 @@ export function QuickShoppingListPage({
                   {t.quickList.noMatches}
                 </p>
               ) : (
-                <div className="mt-3 flex snap-x gap-2.5 overflow-x-auto pb-1">
+                <div className="mt-3 flex snap-x gap-2.5 overflow-x-auto no-scrollbar pb-1">
                   {entry.matches.map((product) => (
                     <QuickListProductMiniCard
                       key={product.id}
@@ -469,15 +466,6 @@ export function QuickShoppingListPage({
           ))
         )}
       </section>
-
-      {/* Sticky Bottom Green Button: Total Items & Total IQD ("Go to Cart & See Your Savings") */}
-      <FloatingCartBar
-        t={t}
-        language={language}
-        ctaLabel={t.quickList.stickyCartCta}
-        alwaysShow
-        onOpenCart={onOpenCart}
-      />
     </main>
   );
 }

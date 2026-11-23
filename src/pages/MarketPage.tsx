@@ -17,7 +17,6 @@ import type {
 interface MarketPageProps {
   t: TranslationDictionary;
   language: Language;
-  onChangeLanguage: (lang: Language) => void;
   settings: StoreSettings;
   banners: Banner[];
   categories: Category[];
@@ -49,7 +48,6 @@ interface MarketPageProps {
 export function MarketPage({
   t,
   language,
-  onChangeLanguage,
   settings,
   banners,
   categories,
@@ -98,7 +96,7 @@ export function MarketPage({
   }, [hasMore, loadingMore, onLoadMore]);
 
   return (
-    <main className="mx-auto max-w-[1280px] space-y-6 px-4 pt-5 sm:px-6 lg:px-8">
+    <main className="w-full space-y-4 px-3 pt-3">
       {/* Offline Banner */}
       {!isOnline && (
         <div
@@ -135,13 +133,13 @@ export function MarketPage({
         onSelectCategory={onSelectCategory}
       />
 
-      {/* Search, Language, Sections, Categories & Subcategories */}
+      {/* Search, Quick List, Sections, Categories & Subcategories */}
       <CatalogToolbar
         t={t}
         language={language}
-        onChangeLanguage={onChangeLanguage}
         categories={categories}
         homeSections={settings.homeSections}
+        lowBandwidthMode={Boolean(settings.lowBandwidthCategorySvgOnly)}
         selectedCategory={selectedCategory}
         selectedCategoryId={selectedCategoryId}
         selectedSubcategoryId={selectedSubcategoryId}
@@ -158,14 +156,11 @@ export function MarketPage({
 
       {/* Product Feed States */}
       {status === 'loading' ? (
-        <div
-          aria-busy="true"
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        >
-          {Array.from({ length: 8 }).map((_, idx) => (
+        <div aria-busy="true" className="grid grid-cols-2 gap-2.5">
+          {Array.from({ length: 6 }).map((_, idx) => (
             <div
               key={idx}
-              className="overflow-hidden rounded-2xl border border-[#E5E7E4] bg-white p-3.5"
+              className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-2.5"
             >
               <div className="aspect-[4/3] w-full animate-pulse rounded-xl bg-[#ECEFEA]" />
               <div className="mt-3 h-3 w-1/3 animate-pulse rounded bg-[#ECEFEA]" />
@@ -209,7 +204,7 @@ export function MarketPage({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5">
             {visibleProducts.map((product) => (
               <ProductCard
                 key={product.id}
