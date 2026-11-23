@@ -208,6 +208,8 @@ export interface TranslationDictionary {
     medianAlertsEnabling: string;
     medianAlertsSynced: string;
     medianAlertsSubtitle: string;
+    medianStatusConnected: string;
+    medianStatusNotConnected: string;
   };
   categoriesPage: {
     title: string;
@@ -490,6 +492,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       medianAlertsEnabling: 'چالاککردن…',
       medianAlertsSynced: 'ئاگادارکردنەوەی مۆبایل چالاک کرا!',
       medianAlertsSubtitle: 'ئاگادارکردنەوەی ڕاستەوخۆ وەربگرە کاتێک داواکارییەکەت پەسەند دەکرێت یان دەگاتە دەستت.',
+      medianStatusConnected: 'ئاگادارکردنەوەی مۆبایل: پەیوەستە',
+      medianStatusNotConnected: 'ئاگادارکردنەوەی مۆبایل: پەیوەست نییە',
     },
     categoriesPage: {
       title: 'پۆلەکان',
@@ -758,6 +762,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       medianAlertsEnabling: 'جاري التفعيل…',
       medianAlertsSynced: 'تم تفعيل تنبيهات الموبايل بنجاح!',
       medianAlertsSubtitle: 'استلم إشعارات فورية على شاشة القفل عند تأكيد طلبك أو توصيله.',
+      medianStatusConnected: 'تنبيهات الموبايل: متصل',
+      medianStatusNotConnected: 'تنبيهات الموبايل: غير متصل',
     },
     categoriesPage: {
       title: 'الأقسام',
@@ -1026,6 +1032,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       medianAlertsEnabling: 'Enabling…',
       medianAlertsSynced: 'Mobile alerts enabled on this device!',
       medianAlertsSubtitle: 'Receive lock-screen alerts when your order is confirmed or delivered.',
+      medianStatusConnected: 'Push Alerts: Connected',
+      medianStatusNotConnected: 'Push Alerts: Not Connected',
     },
     categoriesPage: {
       title: 'Categories',

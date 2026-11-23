@@ -22,20 +22,11 @@ export interface PushNotificationCopy {
   body: string;
 }
 
-export interface OneSignalNotificationPayload {
-  app_id: string;
-  include_aliases: {
-    external_id: string[];
-  };
-  target_channel: 'push';
-  headings: {
-    en: string;
-  };
-  contents: {
-    en: string;
-  };
-  url?: string;
-}
+export {
+  buildOneSignalNotificationPayload,
+  extractOneSignalErrorMessage,
+  type OneSignalNotificationPayload,
+} from './oneSignalPayload';
 
 function formatNumberPlain(amount: number): string {
   return Math.max(0, Math.round(amount)).toLocaleString('en-US');
@@ -162,37 +153,7 @@ export function buildTestPushMessage(language: Language): PushNotificationCopy {
   };
 }
 
-/**
- * Builds the exact OneSignal REST API v16+ payload targeting a customer via External User ID (Firebase UID).
- * OneSignal requires the `en` key in `headings` and `contents` even when localized Kurdish/Arabic text is sent.
- */
-export function buildOneSignalNotificationPayload(params: {
-  appId: string;
-  externalUserId: string;
-  title: string;
-  body: string;
-  url?: string;
-}): OneSignalNotificationPayload {
-  const payload: OneSignalNotificationPayload = {
-    app_id: params.appId.trim(),
-    include_aliases: {
-      external_id: [params.externalUserId.trim()],
-    },
-    target_channel: 'push',
-    headings: {
-      en: params.title.trim(),
-    },
-    contents: {
-      en: params.body.trim(),
-    },
-  };
 
-  if (params.url && params.url.trim()) {
-    payload.url = params.url.trim();
-  }
-
-  return payload;
-}
 
 /**
  * Computes the customer's orderSavings and cumulative lifetimeSavings when an Admin transitions
@@ -239,12 +200,22 @@ export function computeOrderAndLifetimeSavingsForPush(
  * - an Iraqi phone number (matched against loaded users), OR
  * - a direct Firebase customer UID.
  */
+export type PushTargetUserSummary = Pick<
+  UserProfile,
+  | 'uid'
+  | 'phoneNormalized'
+  | 'phoneDisplay'
+  | 'fullName'
+  | 'language'
+  | 'onesignalSubscriptionId'
+>;
+
 export function resolveTargetUidFromInput(
   rawInput: string,
-  users: Pick<UserProfile, 'uid' | 'phoneNormalized' | 'phoneDisplay' | 'fullName' | 'language'>[]
+  users: PushTargetUserSummary[]
 ): {
   uid: string | null;
-  matchedUser: Pick<UserProfile, 'uid' | 'phoneNormalized' | 'phoneDisplay' | 'fullName' | 'language'> | null;
+  matchedUser: PushTargetUserSummary | null;
 } {
   const trimmed = rawInput.trim();
   if (!trimmed) return { uid: null, matchedUser: null };

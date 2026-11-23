@@ -650,6 +650,16 @@ export async function fetchUserProfile(uid: string): Promise<UserProfile | null>
           : Array.isArray(d.cart)
             ? d.cart
             : [],
+      onesignalExternalId:
+        typeof d.onesignalExternalId === 'string'
+          ? d.onesignalExternalId
+          : undefined,
+      onesignalSubscriptionId:
+        typeof d.onesignalSubscriptionId === 'string'
+          ? d.onesignalSubscriptionId
+          : null,
+      pushPlatform:
+        typeof d.pushPlatform === 'string' ? d.pushPlatform : undefined,
       createdAt: d.createdAt ? timestampToMs(d.createdAt) : null,
       updatedAt: d.updatedAt ? timestampToMs(d.updatedAt) : null,
     };

@@ -5,14 +5,13 @@ import {
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
-import { OperationType, db, handleFirestoreError } from '../lib/firebase';
+import { OperationType, auth, db, handleFirestoreError } from '../lib/firebase';
 import type {
   Language,
   OneSignalPushConfig,
   OrderRecord,
 } from '../types/grocery';
 import {
-  buildOneSignalNotificationPayload,
   buildOrderPushMessage,
   buildTestPushMessage,
   computeOrderAndLifetimeSavingsForPush,
@@ -23,7 +22,8 @@ import {
   type AdminActor,
 } from '../admin/services/adminFirestoreService';
 
-const ONESIGNAL_ENDPOINT = 'https://api.onesignal.com/notifications';
+const SERVER_SEND_PUSH_URL = '/api/send-push';
+const SERVER_PUSH_HEALTH_URL = '/api/push-health';
 
 export const DEFAULT_ONESIGNAL_CONFIG: OneSignalPushConfig = {
   appId: '',
@@ -36,6 +36,13 @@ export interface PushSendResult {
   status: 'sent' | 'not_configured' | 'disabled' | 'error';
   message?: string;
   recipients?: number;
+  httpStatus?: number;
+}
+
+export interface PushBackendHealth {
+  ok: boolean;
+  envConfigured: boolean;
+  error?: string;
 }
 
 function tsToMs(val: unknown): number | undefined {
@@ -46,6 +53,40 @@ function tsToMs(val: unknown): number | undefined {
     return Number((val as { seconds: number }).seconds) * 1000;
   }
   return undefined;
+}
+
+/**
+ * Verifies the Node.js Express backend (/api/push-health) is running and checks
+ * whether server-side OneSignal environment secrets are configured.
+ */
+export async function checkPushBackendHealth(): Promise<PushBackendHealth> {
+  try {
+    const response = await fetch(SERVER_PUSH_HEALTH_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      return {
+        ok: false,
+        envConfigured: false,
+        error: `Backend returned HTTP ${response.status}`,
+      };
+    }
+    const data = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      envConfigured?: boolean;
+    };
+    return {
+      ok: Boolean(data.ok),
+      envConfigured: Boolean(data.envConfigured),
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      envConfigured: false,
+      error: err instanceof Error ? err.message : 'Backend unreachable',
+    };
+  }
 }
 
 /**
@@ -108,102 +149,124 @@ export async function saveOneSignalConfigAdmin(
 }
 
 /**
- * Sends a push notification via OneSignal REST API targeting a single Firebase UID (External User ID).
+ * Sends a push notification via our same-origin Node.js Express route `POST /api/send-push`
+ * (never calling api.onesignal.com directly from the browser, avoiding CORS failures).
  */
 export async function sendOneSignalNotification(params: {
   config: OneSignalPushConfig;
   externalUserId: string;
+  subscriptionId?: string | null;
   title: string;
   body: string;
   url?: string;
 }): Promise<PushSendResult> {
   const appId = params.config.appId.trim();
-  const restApiKey = params.config.restApiKey.trim();
+  const apiKey = params.config.restApiKey.trim();
   const targetUid = params.externalUserId.trim();
+  const subscriptionId = params.subscriptionId?.trim() || '';
 
-  if (!appId || !restApiKey) {
-    return {
-      ok: false,
-      status: 'not_configured',
-      message: 'OneSignal App ID or REST API Key is not configured.',
-    };
-  }
-
-  if (!targetUid) {
+  if (!targetUid && !subscriptionId) {
     return {
       ok: false,
       status: 'error',
-      message: 'Missing customer UID.',
+      message: 'Missing customer UID or OneSignal subscription ID.',
     };
   }
 
-  const payload = buildOneSignalNotificationPayload({
-    appId,
-    externalUserId: targetUid,
-    title: params.title,
-    body: params.body,
-    url: params.url,
-  });
+  let idToken = '';
+  try {
+    idToken = (await auth.currentUser?.getIdToken()) || '';
+  } catch {
+    idToken = '';
+  }
+
+  if (!idToken) {
+    return {
+      ok: false,
+      status: 'error',
+      message: 'Admin session token unavailable. Please sign in to /admin again.',
+    };
+  }
 
   try {
-    const response = await fetch(ONESIGNAL_ENDPOINT, {
+    const response = await fetch(SERVER_SEND_PUSH_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        Authorization: `Key ${restApiKey}`,
+        Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        appId,
+        apiKey,
+        targetUid,
+        subscriptionId: subscriptionId || undefined,
+        title: params.title,
+        body: params.body,
+        url: params.url,
+      }),
     });
 
     const data = (await response.json().catch(() => ({}))) as {
-      id?: string;
+      ok?: boolean;
+      httpStatus?: number;
       recipients?: number;
-      errors?: unknown;
+      error?: string;
     };
 
-    if (!response.ok) {
-      const errorDetail =
-        Array.isArray(data.errors) && data.errors.length > 0
-          ? String(data.errors[0])
-          : typeof data.errors === 'object' && data.errors !== null
-            ? JSON.stringify(data.errors)
-            : `HTTP ${response.status}`;
+    if (!response.ok || !data.ok) {
       return {
         ok: false,
-        status: 'error',
-        message: errorDetail,
+        status: response.status === 400 && !appId && !apiKey ? 'not_configured' : 'error',
+        httpStatus: data.httpStatus ?? response.status,
+        message:
+          data.error ||
+          `Push backend returned HTTP ${response.status}. Check server logs and OneSignal settings.`,
       };
     }
 
     return {
       ok: true,
       status: 'sent',
+      httpStatus: data.httpStatus ?? response.status,
       recipients: typeof data.recipients === 'number' ? data.recipients : undefined,
     };
   } catch (err) {
     return {
       ok: false,
       status: 'error',
-      message: err instanceof Error ? err.message : 'Network error contacting OneSignal.',
+      message:
+        err instanceof Error
+          ? `Could not reach backend /api/send-push: ${err.message}`
+          : 'Could not reach backend /api/send-push.',
     };
   }
 }
 
-async function lookupCustomerLanguage(
+async function lookupCustomerPushContext(
   userId: string,
-  fallback: Language
-): Promise<Language> {
-  if (!userId.trim()) return fallback;
+  fallbackLanguage: Language
+): Promise<{ language: Language; subscriptionId: string | null }> {
+  if (!userId.trim()) {
+    return { language: fallbackLanguage, subscriptionId: null };
+  }
   try {
     const snap = await getDoc(doc(db, 'users', userId.trim()));
-    if (!snap.exists()) return fallback;
-    const lang = snap.data().language;
-    if (lang === 'ku' || lang === 'ar' || lang === 'en') {
-      return lang;
+    if (!snap.exists()) {
+      return { language: fallbackLanguage, subscriptionId: null };
     }
-    return fallback;
+    const d = snap.data();
+    const lang =
+      d.language === 'ku' || d.language === 'ar' || d.language === 'en'
+        ? d.language
+        : fallbackLanguage;
+    const subId =
+      typeof d.onesignalSubscriptionId === 'string' &&
+      d.onesignalSubscriptionId.trim().length > 0
+        ? d.onesignalSubscriptionId.trim()
+        : null;
+    return { language: lang, subscriptionId: subId };
   } catch {
-    return fallback;
+    return { language: fallbackLanguage, subscriptionId: null };
   }
 }
 
@@ -219,17 +282,23 @@ export async function triggerOrderStatusPushAdmin(params: {
 }): Promise<PushSendResult> {
   try {
     const config = await fetchOneSignalConfigAdmin();
-    if (!config.appId.trim() || !config.restApiKey.trim()) {
-      return { ok: false, status: 'not_configured' };
-    }
     if (!config.enabled) {
       return { ok: false, status: 'disabled' };
     }
 
-    const customerLang = await lookupCustomerLanguage(
-      params.order.userId,
-      params.fallbackLanguage
-    );
+    // If neither Firestore config nor server env secrets are set, skip cleanly
+    if (!config.appId.trim() || !config.restApiKey.trim()) {
+      const health = await checkPushBackendHealth();
+      if (!health.envConfigured) {
+        return { ok: false, status: 'not_configured' };
+      }
+    }
+
+    const { language: customerLang, subscriptionId } =
+      await lookupCustomerPushContext(
+        params.order.userId,
+        params.fallbackLanguage
+      );
 
     const { orderSavings, lifetimeSavings } =
       computeOrderAndLifetimeSavingsForPush(
@@ -255,6 +324,7 @@ export async function triggerOrderStatusPushAdmin(params: {
     return await sendOneSignalNotification({
       config,
       externalUserId: params.order.userId,
+      subscriptionId,
       title: copy.title,
       body: copy.body,
       url: appUrl,
@@ -274,6 +344,7 @@ export async function triggerOrderStatusPushAdmin(params: {
 export async function sendTestPushAdmin(params: {
   config: OneSignalPushConfig;
   externalUserId: string;
+  subscriptionId?: string | null;
   language: Language;
 }): Promise<PushSendResult> {
   const copy = buildTestPushMessage(params.language);
@@ -285,6 +356,7 @@ export async function sendTestPushAdmin(params: {
   return sendOneSignalNotification({
     config: params.config,
     externalUserId: params.externalUserId,
+    subscriptionId: params.subscriptionId,
     title: copy.title,
     body: copy.body,
     url: appUrl,

@@ -21,9 +21,11 @@ import { normalizeIraqiPhone } from '../../utils/supermarketLogic';
 import { resolveTargetUidFromInput } from '../../utils/oneSignalPushLogic';
 import {
   DEFAULT_ONESIGNAL_CONFIG,
+  checkPushBackendHealth,
   fetchOneSignalConfigAdmin,
   saveOneSignalConfigAdmin,
   sendTestPushAdmin,
+  type PushBackendHealth,
 } from '../../services/oneSignalPushService';
 import type { AdminDictionary } from '../i18n/adminTranslations';
 import {
@@ -68,6 +70,7 @@ export function SettingsTab({
   const [testSending, setTestSending] = useState(false);
   const [testSuccess, setTestSuccess] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+  const [backendHealth, setBackendHealth] = useState<PushBackendHealth | null>(null);
 
   useEffect(() => {
     setDraft(settings);
@@ -84,6 +87,15 @@ export function SettingsTab({
       .finally(() => {
         if (active) setPushLoading(false);
       });
+
+    checkPushBackendHealth()
+      .then((health) => {
+        if (active) setBackendHealth(health);
+      })
+      .catch(() => {
+        if (active) setBackendHealth({ ok: false, envConfigured: false });
+      });
+
     return () => {
       active = false;
     };
@@ -157,7 +169,10 @@ export function SettingsTab({
     setTestError(null);
     setTestSuccess(null);
 
-    if (!pushConfig.appId.trim() || !pushConfig.restApiKey.trim()) {
+    const hasInlineCreds = Boolean(
+      pushConfig.appId.trim() && pushConfig.restApiKey.trim()
+    );
+    if (!hasInlineCreds && !backendHealth?.envConfigured) {
       setTestError(t.settings.oneSignalNotConfiguredError);
       return;
     }
@@ -174,6 +189,7 @@ export function SettingsTab({
       const result = await sendTestPushAdmin({
         config: pushConfig,
         externalUserId: resolved.uid,
+        subscriptionId: resolved.matchedUser?.onesignalSubscriptionId ?? null,
         language: targetLang,
       });
       if (result.ok) {
@@ -518,6 +534,43 @@ export function SettingsTab({
               <p className="mt-0.5 text-xs leading-relaxed text-[#5B665D] sm:text-sm">
                 {t.settings.mobilePushSubtitle}
               </p>
+              <div
+                data-testid="push-backend-health"
+                className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold"
+              >
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 ${
+                    backendHealth === null
+                      ? 'bg-[#F3F5F2] text-[#5B665D]'
+                      : backendHealth.ok
+                        ? 'bg-[#EBF7F0] text-[#115532]'
+                        : 'bg-[#FDF1F0] text-[#B42318]'
+                  }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      backendHealth === null
+                        ? 'bg-[#94A3B8]'
+                        : backendHealth.ok
+                          ? 'bg-[#16A34A]'
+                          : 'bg-[#DC2626]'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {backendHealth === null
+                      ? t.settings.pushBackendChecking
+                      : backendHealth.ok
+                        ? t.settings.pushBackendOnline
+                        : t.settings.pushBackendOffline}
+                  </span>
+                </span>
+                {backendHealth?.envConfigured && (
+                  <span className="rounded-md bg-[#EEF6FF] px-2 py-0.5 text-[#1D4ED8]">
+                    {t.settings.pushBackendEnvReady}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

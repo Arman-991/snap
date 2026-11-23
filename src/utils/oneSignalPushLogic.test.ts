@@ -5,6 +5,7 @@ import {
   buildOrderPushMessage,
   buildTestPushMessage,
   computeOrderAndLifetimeSavingsForPush,
+  extractOneSignalErrorMessage,
   resolveTargetUidFromInput,
 } from './oneSignalPushLogic.ts';
 import type { OrderRecord } from '../types/grocery.ts';
@@ -104,21 +105,57 @@ describe('OneSignal Push Logic', () => {
     assert.ok(onlyLifetimeAr.body.includes('9,000'));
   });
 
-  it('builds valid OneSignal v16 REST payload targeting External User ID', () => {
-    const payload = buildOneSignalNotificationPayload({
+  it('builds OneSignal payload using include_subscription_ids when subscriptionId exists, else include_aliases.external_id', () => {
+    const bySub = buildOneSignalNotificationPayload({
       appId: '  11111111-2222-3333-4444-555555555555  ',
       externalUserId: 'uid_abc_123',
+      subscriptionId: 'sub_device_999',
       title: 'داواکارییەکەت گەیشت!',
       body: 'سوپاس بۆ کڕینت!',
       url: 'https://example.com/?view=orders',
     });
 
-    assert.equal(payload.app_id, '11111111-2222-3333-4444-555555555555');
-    assert.deepEqual(payload.include_aliases.external_id, ['uid_abc_123']);
-    assert.equal(payload.target_channel, 'push');
-    assert.equal(payload.headings.en, 'داواکارییەکەت گەیشت!');
-    assert.equal(payload.contents.en, 'سوپاس بۆ کڕینت!');
-    assert.equal(payload.url, 'https://example.com/?view=orders');
+    assert.equal(bySub.app_id, '11111111-2222-3333-4444-555555555555');
+    assert.deepEqual(bySub.include_subscription_ids, ['sub_device_999']);
+    assert.equal(bySub.include_aliases, undefined);
+    assert.equal(bySub.target_channel, 'push');
+    assert.equal(bySub.headings.en, 'داواکارییەکەت گەیشت!');
+    assert.equal(bySub.contents.en, 'سوپاس بۆ کڕینت!');
+    assert.equal(bySub.url, 'https://example.com/?view=orders');
+
+    const byAlias = buildOneSignalNotificationPayload({
+      appId: '11111111-2222-3333-4444-555555555555',
+      externalUserId: 'uid_abc_123',
+      subscriptionId: null,
+      title: 'Confirmed',
+      body: 'Preparing your groceries',
+    });
+    assert.deepEqual(byAlias.include_aliases?.external_id, ['uid_abc_123']);
+    assert.equal(byAlias.include_subscription_ids, undefined);
+  });
+
+  it('extracts clear readable errors from OneSignal responses including HTTP 200 unsubscribed errors', () => {
+    assert.equal(
+      extractOneSignalErrorMessage(200, { id: 'notif_123', recipients: 1 }),
+      null
+    );
+
+    const notSubscribed = extractOneSignalErrorMessage(200, {
+      id: '',
+      recipients: 0,
+      errors: ['All included players are not subscribed'],
+    });
+    assert.ok(notSubscribed?.includes('All included players are not subscribed'));
+    assert.ok(notSubscribed?.includes('Median Android APK'));
+
+    const invalidAliases = extractOneSignalErrorMessage(200, {
+      errors: { invalid_aliases: { external_id: ['uid_123'] } },
+    });
+    assert.ok(invalidAliases?.includes('not registered in OneSignal yet'));
+
+    const unauthorized = extractOneSignalErrorMessage(401, {});
+    assert.ok(unauthorized?.includes('401'));
+    assert.ok(unauthorized?.includes('os_v2_app_'));
   });
 
   it('computes lifetimeSavings on Delivered transition without double counting', () => {
@@ -148,7 +185,6 @@ describe('OneSignal Push Logic', () => {
     assert.equal(result.orderSavings, 2500);
     assert.equal(result.lifetimeSavings, 6500);
 
-    // If order already reflects Delivered in snapshot, still no double-counting
     const alreadyDelivered = { ...currentTransitioning, status: 'Delivered' as const };
     const resultAlready = computeOrderAndLifetimeSavingsForPush(
       [prevDelivered, alreadyDelivered, otherCustomer],
@@ -158,7 +194,7 @@ describe('OneSignal Push Logic', () => {
     assert.equal(resultAlready.lifetimeSavings, 6500);
   });
 
-  it('resolves customer UID from Iraqi phone input or raw Firebase UID', () => {
+  it('resolves customer UID and subscriptionId from Iraqi phone input or raw Firebase UID', () => {
     const users = [
       {
         uid: 'uid_erbil_99',
@@ -166,12 +202,14 @@ describe('OneSignal Push Logic', () => {
         phoneDisplay: '0750 123 4567',
         phoneNormalized: '9647501234567',
         language: 'ku' as const,
+        onesignalSubscriptionId: 'sub_erbil_001',
       },
     ];
 
     const byPhone = resolveTargetUidFromInput('0750 123 4567', users);
     assert.equal(byPhone.uid, 'uid_erbil_99');
     assert.equal(byPhone.matchedUser?.language, 'ku');
+    assert.equal(byPhone.matchedUser?.onesignalSubscriptionId, 'sub_erbil_001');
 
     const byIntlPhone = resolveTargetUidFromInput('+9647501234567', users);
     assert.equal(byIntlPhone.uid, 'uid_erbil_99');

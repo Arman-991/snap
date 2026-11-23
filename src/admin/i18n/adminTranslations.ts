@@ -190,6 +190,10 @@ export interface AdminDictionary {
     oneSignalNotConfiguredError: string;
     showKey: string;
     hideKey: string;
+    pushBackendChecking: string;
+    pushBackendOnline: string;
+    pushBackendOffline: string;
+    pushBackendEnvReady: string;
   };
   reports: {
     title: string;
@@ -426,6 +430,10 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       oneSignalNotConfiguredError: 'Please enter both OneSignal App ID and REST API Key first.',
       showKey: 'Show key',
       hideKey: 'Hide key',
+      pushBackendChecking: 'Checking push server…',
+      pushBackendOnline: 'Push Server: Online',
+      pushBackendOffline: 'Push Server: Offline',
+      pushBackendEnvReady: 'Server Secrets Ready',
     },
     reports: {
       title: 'Reports & Analytics',
@@ -660,6 +668,10 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       oneSignalNotConfiguredError: 'تکایە سەرەتا OneSignal App ID و REST API Key بنووسە.',
       showKey: 'پیشاندان',
       hideKey: 'شاردنەوە',
+      pushBackendChecking: 'پشکنینی سێرڤەری ئاگادارکردنەوە…',
+      pushBackendOnline: 'سێرڤەری ئاگادارکردنەوە: چالاکە',
+      pushBackendOffline: 'سێرڤەری ئاگادارکردنەوە: وەستاوە',
+      pushBackendEnvReady: 'کلیلەکانی سێرڤەر ئامادەن',
     },
     reports: {
       title: 'ڕاپۆرت و ئامارەکان',
@@ -894,6 +906,10 @@ export const ADMIN_TRANSLATIONS: Record<Language, AdminDictionary> = {
       oneSignalNotConfiguredError: 'يرجى إدخال OneSignal App ID و REST API Key أولاً.',
       showKey: 'إظهار',
       hideKey: 'إخفاء',
+      pushBackendChecking: 'جاري فحص خادم الإشعارات…',
+      pushBackendOnline: 'خادم الإشعارات: متصل',
+      pushBackendOffline: 'خادم الإشعارات: غير متصل',
+      pushBackendEnvReady: 'مفاتيح الخادم جاهزة',
     },
     reports: {
       title: 'التقارير والتحليلات',

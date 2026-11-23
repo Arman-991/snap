@@ -33,6 +33,7 @@ export interface MedianPushSyncResult {
   registered: boolean;
   loggedIn: boolean;
   subscriptionId: string | null;
+  optedIn: boolean | null;
   savedToFirestore: boolean;
 }
 
@@ -60,14 +61,28 @@ function getMedianOneSignal(): MedianOneSignalBridge | null {
   }
 }
 
-function extractSubscriptionId(raw: unknown): string | null {
-  if (!raw || typeof raw !== 'object') return null;
+function extractSubscriptionDetails(raw: unknown): {
+  subscriptionId: string | null;
+  optedIn: boolean | null;
+} {
+  if (!raw || typeof raw !== 'object') {
+    return { subscriptionId: null, optedIn: null };
+  }
   const info = raw as MedianOneSignalInfo;
   const subId = info.subscription?.id ?? info.oneSignalUserId ?? null;
-  if (typeof subId === 'string' && subId.trim().length > 0) {
-    return subId.trim().slice(0, 128);
-  }
-  return null;
+  const cleanSubId =
+    typeof subId === 'string' && subId.trim().length > 0
+      ? subId.trim().slice(0, 128)
+      : null;
+
+  const optedIn =
+    typeof info.subscription?.optedIn === 'boolean'
+      ? info.subscription.optedIn
+      : typeof info.optedIn === 'boolean'
+        ? info.optedIn
+        : null;
+
+  return { subscriptionId: cleanSubId, optedIn };
 }
 
 /**
@@ -116,11 +131,12 @@ export async function loginMedianOneSignal(uid: string): Promise<boolean> {
  */
 export async function fetchMedianOneSignalInfo(): Promise<{
   subscriptionId: string | null;
+  optedIn: boolean | null;
 }> {
   try {
     const onesignal = getMedianOneSignal();
     if (!onesignal || typeof onesignal.info !== 'function') {
-      return { subscriptionId: null };
+      return { subscriptionId: null, optedIn: null };
     }
 
     const result = await new Promise<unknown>((resolve) => {
@@ -162,9 +178,9 @@ export async function fetchMedianOneSignalInfo(): Promise<{
       }
     });
 
-    return { subscriptionId: extractSubscriptionId(result) };
+    return extractSubscriptionDetails(result);
   } catch {
-    return { subscriptionId: null };
+    return { subscriptionId: null, optedIn: null };
   }
 }
 
@@ -197,7 +213,8 @@ export async function saveMedianPushMetadataToUser(
  * 1) Safely skips in regular web browsers.
  * 2) Calls median.onesignal.register() to request Android push permission.
  * 3) Binds the device via median.onesignal.login(uid).
- * 4) Reads median.onesignal.info() and persists mapping onto users/{uid} once the profile exists.
+ * 4) Reads median.onesignal.info() (with a short retry if Android just granted permission)
+ *    and persists onesignalSubscriptionId onto users/{uid} once the profile exists.
  */
 export async function syncMedianPushWithUser(
   uid: string | null | undefined,
@@ -209,35 +226,40 @@ export async function syncMedianPushWithUser(
       registered: false,
       loggedIn: false,
       subscriptionId: null,
+      optedIn: null,
       savedToFirestore: false,
     };
   }
 
   const registered = await registerMedianPush();
   const cleanUid = uid?.trim() || '';
-  if (!cleanUid) {
-    return {
-      isMedian: true,
-      registered,
-      loggedIn: false,
-      subscriptionId: null,
-      savedToFirestore: false,
-    };
+
+  let loggedIn = false;
+  if (cleanUid) {
+    loggedIn = await loginMedianOneSignal(cleanUid);
   }
 
-  const loggedIn = await loginMedianOneSignal(cleanUid);
-  const { subscriptionId } = await fetchMedianOneSignalInfo();
+  let info = await fetchMedianOneSignalInfo();
+  if (!info.subscriptionId && registered) {
+    // Give Median/OneSignal SDK a brief moment to emit the subscription ID after register()
+    await new Promise((r) => window.setTimeout(r, 700));
+    info = await fetchMedianOneSignalInfo();
+  }
 
   let savedToFirestore = false;
-  if (hasProfileDoc) {
-    savedToFirestore = await saveMedianPushMetadataToUser(cleanUid, subscriptionId);
+  if (cleanUid && hasProfileDoc) {
+    savedToFirestore = await saveMedianPushMetadataToUser(
+      cleanUid,
+      info.subscriptionId
+    );
   }
 
   return {
     isMedian: true,
     registered,
     loggedIn,
-    subscriptionId,
+    subscriptionId: info.subscriptionId,
+    optedIn: info.optedIn,
     savedToFirestore,
   };
 }

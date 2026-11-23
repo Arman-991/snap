@@ -15,7 +15,11 @@ import { LifetimeSavingsCard } from '../components/LifetimeSavingsCard';
 import { OrderAlertsToggle } from '../components/OrderAlertsToggle';
 import { PWAInstallButton } from '../components/PWAInstallButton';
 import type { BrowserAlertStatus } from '../hooks/useBrowserOrderAlerts';
-import { isMedianApp, syncMedianPushWithUser } from '../lib/medianPush';
+import {
+  fetchMedianOneSignalInfo,
+  isMedianApp,
+  syncMedianPushWithUser,
+} from '../lib/medianPush';
 import type { TranslationDictionary } from '../i18n/translations';
 import type {
   ContactLinkItem,
@@ -81,18 +85,49 @@ export function ProfilePage({
   const [savedNotice, setSavedNotice] = useState(false);
   const [medianBusy, setMedianBusy] = useState(false);
   const [medianEnabledNotice, setMedianEnabledNotice] = useState(false);
+  const [medianSubscriptionId, setMedianSubscriptionId] = useState<string | null>(
+    profile?.onesignalSubscriptionId ?? null
+  );
   const runningInMedian = isMedianApp();
+
+  useEffect(() => {
+    if (profile?.onesignalSubscriptionId) {
+      setMedianSubscriptionId(profile.onesignalSubscriptionId);
+    }
+  }, [profile?.onesignalSubscriptionId]);
+
+  useEffect(() => {
+    if (!runningInMedian) return;
+    let active = true;
+    fetchMedianOneSignalInfo()
+      .then((info) => {
+        if (active && info.subscriptionId) {
+          setMedianSubscriptionId(info.subscriptionId);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [runningInMedian]);
 
   const handleEnableMedianAlerts = async () => {
     setMedianBusy(true);
     setMedianEnabledNotice(false);
     try {
-      await syncMedianPushWithUser(uid, Boolean(profile));
+      const result = await syncMedianPushWithUser(uid, Boolean(profile));
+      if (result.subscriptionId) {
+        setMedianSubscriptionId(result.subscriptionId);
+      }
       setMedianEnabledNotice(true);
     } finally {
       setMedianBusy(false);
     }
   };
+
+  const isMedianPushConnected = Boolean(
+    medianSubscriptionId || profile?.onesignalSubscriptionId
+  );
 
   useEffect(() => {
     if (!profile) return;
@@ -175,6 +210,24 @@ export function ProfilePage({
                   </p>
                   <p className="mt-0.5 text-xs leading-relaxed text-[#4E5750]">
                     {t.retention.medianAlertsSubtitle}
+                  </p>
+                  <p
+                    data-testid="median-push-status"
+                    className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold ${
+                      isMedianPushConnected ? 'text-[#115532]' : 'text-[#8C5B12]'
+                    }`}
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        isMedianPushConnected ? 'bg-[#16A34A]' : 'bg-[#D97706]'
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {isMedianPushConnected
+                        ? t.retention.medianStatusConnected
+                        : t.retention.medianStatusNotConnected}
+                    </span>
                   </p>
                 </div>
               </div>
